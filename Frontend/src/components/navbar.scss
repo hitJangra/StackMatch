@@ -1,0 +1,81 @@
+@use 'sass:color';
+$bg-nav: #0d1117;
+$border-color: #2a3348;
+$accent: #ff2d78;
+$text-primary: #e6edf3;
+$text-muted: #7d8590;
+$font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+.navbar {
+    width: 100%;
+    height: 52px;
+    background-color: $bg-nav;
+    border-bottom: 1px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    font-family: $font-stack;
+    flex-shrink: 0;
+
+    &__brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: $accent;
+        cursor: pointer;
+        user-select: none;
+        letter-spacing: -0.01em;
+    }
+
+    &__user {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, $accent 0%, color.adjust($accent, $lightness: -12%) 100%);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    &__username {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: $text-primary;
+    }
+
+    &__logout {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.75rem;
+        background: none;
+        border: 1px solid $border-color;
+        border-radius: 0.4rem;
+        color: $text-muted;
+        font-size: 0.8rem;
+        font-family: $font-stack;
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+
+        &:hover {
+            border-color: $accent;
+            color: $accent;
+        }
+    }
+}

@@ -1,0 +1,16 @@
+@use "./style/button.scss";
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.highlight {
+    color: #4f46e5;
+}
