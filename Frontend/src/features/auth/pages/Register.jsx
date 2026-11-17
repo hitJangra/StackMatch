@@ -1,9 +1,16 @@
+// react and state hook
 import React, { useState } from 'react';
+// navigation and router links
 import { useNavigate, Link } from 'react-router';
+// auth custom hook
 import { useAuth } from '../hooks/useAuth';
+// theme provider hook
 import { useTheme } from '../../theme/theme.context';
+// toast notifications hook
 import { useToast } from '../../../components/Toast';
+// spinner loader
 import Spinner from '../../../components/Spinner';
+// icons
 import { 
     User, 
     Mail, 
@@ -17,12 +24,18 @@ import {
     ShieldCheck
 } from 'lucide-react';
 
+// registration view component
 const Register = () => {
+    // router navigation
     const navigate = useNavigate();
+    // auth state and register action
     const { loading, handleRegister } = useAuth();
+    // dark/light theme state
     const { theme, toggleTheme } = useTheme();
+    // toast triggers
     const { addToast } = useToast();
 
+    // form input states
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -31,49 +44,57 @@ const Register = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
+    // form submit handler
     const handleSubmit = async (e) => {
+        // prevent page reload
         e.preventDefault();
 
-        // Frontend validation
+        // validate all inputs
         if (!username.trim() || !email.trim() || !password.trim()) {
             addToast("Please fill in all fields.", "warning");
             return;
         }
 
+        // enforce minimum password length
         if (password.length < 6) {
             addToast("Password must be at least 6 characters.", "warning");
             return;
         }
 
+        // check password confirmation matches
         if (password !== confirmPassword) {
             addToast("Passwords do not match.", "warning");
             return;
         }
 
+        // call registration handler
         setSubmitting(true);
         const result = await handleRegister({ username, email, password });
         setSubmitting(false);
 
+        // handle response
         if (result?.success) {
             addToast("Account created successfully!", "success");
-            navigate("/");
+            navigate("/"); // redirect to home
         } else {
             addToast(result?.message || "Registration failed. Please try again.", "error");
         }
     };
 
+    // show loader while checking session
     if (loading) {
         return <Spinner message="Checking session..." />;
     }
 
     return (
+        // registration page container
         <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden select-none">
-            {/* Ambient Background Glow Elements */}
+            {/* ambient decorative background glows */}
             <div className="absolute top-1/4 -left-20 w-80 h-80 bg-zinc-300/40 dark:bg-zinc-800/30 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-zinc-400/20 dark:bg-zinc-700/20 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Top-Right Theme Toggle */}
+            {/* light / dark mode toggle */}
             <div className="absolute top-6 right-6 z-20">
                 <button
                     onClick={toggleTheme}
@@ -85,11 +106,11 @@ const Register = () => {
                 </button>
             </div>
 
-            {/* Glassmorphic Container Card */}
+            {/* card container */}
             <div className="relative z-10 w-full max-w-md">
                 <div className="p-8 sm:p-10 rounded-2xl bg-white/75 dark:bg-zinc-900/65 backdrop-blur-xl border border-white/60 dark:border-zinc-800/80 shadow-2xl shadow-zinc-900/10 dark:shadow-black/60 ring-1 ring-black/5 dark:ring-white/10 space-y-6">
                     
-                    {/* Header with App Badge */}
+                    {/* card branding and title */}
                     <div className="text-center space-y-2">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md mb-2">
                             <Sparkles className="w-6 h-6" />
@@ -102,9 +123,9 @@ const Register = () => {
                         </p>
                     </div>
 
-                    {/* Form */}
+                    {/* signup form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username Input */}
+                        {/* username input */}
                         <div className="space-y-1.5">
                             <label 
                                 htmlFor="username" 
@@ -129,7 +150,7 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Email Input */}
+                        {/* email address input */}
                         <div className="space-y-1.5">
                             <label 
                                 htmlFor="email" 
@@ -154,7 +175,7 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Password Input */}
+                        {/* password input */}
                         <div className="space-y-1.5">
                             <label 
                                 htmlFor="password" 
@@ -176,6 +197,7 @@ const Register = () => {
                                     className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
                                     autoComplete="new-password"
                                 />
+                                {/* show / hide password toggle */}
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -187,7 +209,7 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Confirm Password Input */}
+                        {/* confirm password input */}
                         <div className="space-y-1.5">
                             <label 
                                 htmlFor="confirmPassword" 
@@ -209,6 +231,7 @@ const Register = () => {
                                     className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
                                     autoComplete="new-password"
                                 />
+                                {/* toggle confirm password visibility */}
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -220,7 +243,7 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Submit Button (Deep Black with Vercel styling) */}
+                        {/* submit registration button */}
                         <div className="pt-2">
                             <button
                                 type="submit"
@@ -242,7 +265,7 @@ const Register = () => {
                         </div>
                     </form>
 
-                    {/* Footer Links & Status */}
+                    {/* login link footer */}
                     <div className="pt-2 border-t border-zinc-100/80 dark:border-zinc-800/80 text-center space-y-3">
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
                             Already have an account?{' '}
@@ -254,6 +277,7 @@ const Register = () => {
                             </Link>
                         </p>
 
+                        {/* security notice */}
                         <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
                             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                             <span>Protected by JWT and bcrypt encryption</span>
@@ -266,4 +290,5 @@ const Register = () => {
     );
 };
 
+// export register component
 export default Register;

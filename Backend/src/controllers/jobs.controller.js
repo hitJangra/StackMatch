@@ -1,112 +1,281 @@
+// apify client library for web scraping actors
 const { ApifyClient } = require("apify-client")
+// cached jobs model to avoid duplicate scraper runs
+const CachedJobs = require("../models/cachedJobs.model")
 
-// Initialise once – token is read from environment at startup.
+// initialize apify client with api token from env
 const apifyClient = new ApifyClient({
     token: process.env.APIFY_API_TOKEN
 })
 
-/**
- * Apify actor IDs for job-board scrapers.
- * Switch ACTIVE_ACTOR to "naukri" to target Naukri.com instead.
- */
+// actor identifiers for scrapers
 const ACTORS = {
     linkedin: "curious_coder/linkedin-jobs-scraper",
     naukri:   "bebity/naukri-jobs-scraper"
 }
 
+// active scraper selection
 const ACTIVE_ACTOR = "linkedin"
 
-/**
- * @description Maps a raw Apify item from the LinkedIn scraper into a
- *              clean, normalised job object for the frontend.
- * @param {Object} item - Raw dataset item returned by Apify.
- * @returns {{ title, company, location, url, description }}
- */
+// generate a human-readable filter-aware query key
+// e.g. "react-developer::india::fresher::internship"
+function generateQueryKey(keywords, filters = {}) {
+    // normalize keywords segment
+    const kwSegment = keywords
+        .map((k) => String(k).trim().toLowerCase().replace(/\s+/g, "-"))
+        .filter(Boolean)
+        .sort()
+        .join("+")
+
+    // normalize filter segments (use "any" as placeholder when not set)
+    const loc = (filters.location || "india").trim().toLowerCase().replace(/\s+/g, "-")
+    const exp = (filters.experience || "any").trim().toLowerCase()
+    const type = (filters.type || "any").trim().toLowerCase()
+
+    return `${kwSegment}::${loc}::${exp}::${type}`
+}
+
+// legacy cache key — keywords only, for backward compatibility lookups
+function generateLegacyCacheKey(keywords) {
+    return keywords
+        .map((k) => String(k).trim().toLowerCase())
+        .filter(Boolean)
+        .sort()
+        .join("::")
+}
+
+// transform raw apify scraper item to clean frontend format
 function normaliseJob(item) {
     return {
+        // extract title with fallbacks
         title:       item.title           || item.jobTitle        || item.positionName || "N/A",
+        // extract company name
         company:     item.companyName     || item.company          || item.organization || "N/A",
+        // extract job location
         location:    item.location        || item.jobLocation      || "N/A",
+        // extract application link
         url:         item.link            || item.applyUrl         || item.url          || item.jobUrl || "#",
+        // extract description or snippet
         description: item.descriptionText || item.description      || item.descriptionHtml || item.jobDescription || item.snippet || ""
     }
 }
 
-/**
- * @route  POST /api/jobs/recommend
- * @desc   Accepts an array of job keywords, runs an Apify scraper for each
- *         keyword, and returns up to 5 normalised job listings per keyword
- *         (capped at 15 total).
- * @access Private
- * @body   { keywords: string[] }
- */
+// build a linkedin search url enriched with filter parameters
+function buildLinkedInUrl(keyword, filters = {}) {
+    const base = "https://www.linkedin.com/jobs/search/"
+    const params = new URLSearchParams()
+
+    // keyword query
+    params.set("keywords", keyword)
+
+    // location filter — append to URL for LinkedIn geo-search
+    if (filters.location && filters.location.toLowerCase() !== "any") {
+        params.set("location", filters.location)
+    }
+
+    // experience level filter — LinkedIn f_E codes:
+    // 1 = Internship, 2 = Entry, 3 = Associate, 4 = Mid-Senior, 5 = Director, 6 = Executive
+    const expMap = {
+        fresher:  "1,2",   // Internship + Entry Level
+        mid:      "3,4",   // Associate + Mid-Senior
+        senior:   "5,6"    // Director + Executive
+    }
+    if (filters.experience && expMap[filters.experience]) {
+        params.set("f_E", expMap[filters.experience])
+    }
+
+    // job type filter — LinkedIn f_JT codes:
+    // F = Full-time, I = Internship, C = Contract, P = Part-time
+    const typeMap = {
+        "full-time":  "F",
+        "internship": "I",
+        "contract":   "C",
+        "part-time":  "P"
+    }
+    if (filters.type && typeMap[filters.type]) {
+        params.set("f_JT", typeMap[filters.type])
+    }
+
+    return `${base}?${params.toString()}`
+}
+
+// handle job recommendations based on keywords + pre-fetch filters
 async function recommendJobsController(req, res, next) {
     try {
+        // get keywords array from request body
         const { keywords } = req.body
 
+        // validate keywords input
         if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
             return res.status(400).json({
                 message: "keywords must be a non-empty array of strings."
             })
         }
 
-        // Clamp to first 3 keywords to avoid excessive Apify usage.
+        // read optional pre-fetch filter query params
+        const filters = {
+            location:   (req.query.location   || "India").trim(),
+            experience: (req.query.exp         || "any").trim(),
+            type:       (req.query.type        || "any").trim()
+        }
+
+        // take top 3 keywords to keep scraper execution fast and cheap
         const safeKeywords = keywords.slice(0, 3)
 
-        // Run one Apify actor call per keyword in parallel.
+        // generate filter-aware cache key (primary lookup)
+        const queryKey    = generateQueryKey(safeKeywords, filters)
+        // legacy keywords-only key (backward compat)
+        const cacheKey    = generateLegacyCacheKey(safeKeywords)
+
+        console.log(`[jobs/recommend] queryKey="${queryKey}" filters=`, filters)
+
+        // ── cache check ────────────────────────────────────────────────
+        const cachedEntry = await CachedJobs.findOne({ queryKey })
+        if (cachedEntry && cachedEntry.jobs && cachedEntry.jobs.length > 0) {
+            console.log(`[jobs/recommend] Cache HIT for queryKey="${queryKey}"`)
+            return res.status(200).json({
+                message: "Job recommendations fetched successfully.",
+                jobs: cachedEntry.jobs,
+                cached: true,
+                queryKey
+            })
+        }
+
+        console.log(`[jobs/recommend] Cache MISS — running Apify scraper`)
+
+        // ── cache miss: scrape jobs using apify in parallel ─────────────
         const scrapeResults = await Promise.allSettled(
             safeKeywords.map((keyword) =>
                 apifyClient.actor(ACTORS[ACTIVE_ACTOR]).call(
                     {
-                        // LinkedIn scraper input schema
-                        urls: [
-                            `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(keyword)}`
-                        ],
-                        count: 5
+                        // build filter-enriched linkedin search url
+                        urls: [ buildLinkedInUrl(keyword, filters) ],
+                        count: 5 // scrape 5 items per keyword
                     },
-                    { waitSecs: 90 }
+                    { waitSecs: 90 } // timeout after 90 seconds
                 )
             )
         )
 
+        // collect all scraped results
         const allJobs = []
 
+        // process actor execution results
         for (const result of scrapeResults) {
+            // skip failed runs
             if (result.status !== "fulfilled") {
-                // Log but don't crash – partial results are still useful.
                 console.error("[jobs/recommend] Apify actor call failed:", result.reason)
                 continue
             }
 
+            // fetch dataset items produced by the actor
             const { defaultDatasetId } = result.value
             const { items } = await apifyClient.dataset(defaultDatasetId).listItems({ limit: 5 })
 
+            // normalize and collect jobs
             for (const item of items) {
-                // Skip error response objects from actor
                 if (item && !item.error && (item.title || item.link)) {
                     allJobs.push(normaliseJob(item))
                 }
             }
         }
 
-        // Deduplicate by URL and cap at 15 cards.
+        // deduplicate listings by link
         const seen  = new Set()
         const jobs  = []
         for (const job of allJobs) {
             if (!seen.has(job.url)) {
                 seen.add(job.url)
                 jobs.push(job)
+                // limit total to 15 listings
                 if (jobs.length >= 15) break
             }
         }
 
+        // ── persist to mongodb cache ──────────────────────────────────
+        if (jobs.length > 0) {
+            try {
+                const userId = req.user?.id || req.user?._id;
+                await CachedJobs.findOneAndUpdate(
+                    { queryKey },
+                    {
+                        ...(userId ? { user: userId } : {}),
+                        queryKey,
+                        cacheKey,
+                        keywords: safeKeywords,
+                        filters,
+                        jobs,
+                        createdAt: new Date()
+                    },
+                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                )
+                console.log(`[jobs/recommend] Cached ${jobs.length} jobs under queryKey="${queryKey}"`)
+            } catch (cacheErr) {
+                // non-fatal — log and continue
+                console.error("[jobs/recommend] Failed to cache Apify results:", cacheErr.message)
+            }
+        }
+
+        // ── return fresh results ──────────────────────────────────────
         res.status(200).json({
             message: "Job recommendations fetched successfully.",
-            jobs
+            jobs,
+            cached: false,
+            queryKey
         })
     } catch (err) {
+        // forward error to express error handler
         next(err)
     }
 }
 
-module.exports = { recommendJobsController }
+// retrieve all past recommended jobs for user
+async function getPastRecommendationsController(req, res, next) {
+    try {
+        const userId = req.user?.id || req.user?._id;
+
+        // Query cached entries belonging to this user, or fallback to all recent entries
+        let entries = [];
+        if (userId) {
+            entries = await CachedJobs.find({ user: userId }).sort({ createdAt: -1 }).limit(30);
+        }
+        if (!entries || entries.length === 0) {
+            entries = await CachedJobs.find().sort({ createdAt: -1 }).limit(15);
+        }
+
+        const seen = new Set();
+        const pastJobs = [];
+
+        for (const entry of entries) {
+            if (Array.isArray(entry.jobs)) {
+                for (const job of entry.jobs) {
+                    if (!job || !job.title || job.title === "N/A") continue;
+                    const key = (job.url && job.url !== "#") ? job.url : `${job.title}::${job.company}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        pastJobs.push({
+                            title: job.title,
+                            company: job.company,
+                            location: job.location,
+                            url: job.url,
+                            description: job.description,
+                            createdAt: entry.createdAt,
+                            keywords: entry.keywords
+                        });
+                    }
+                }
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            count: pastJobs.length,
+            jobs: pastJobs
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// export controller handlers
+module.exports = { recommendJobsController, getPastRecommendationsController }

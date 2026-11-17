@@ -1,42 +1,26 @@
+// express framework
 const express = require("express")
+// token verification middleware
 const authMiddleware = require("../middlewares/auth.middleware")
+// interview logic handlers
 const interviewController = require("../controllers/interview.controller")
+// file upload parser for resume pdf
 const upload = require("../middlewares/file.middleware")
 
+// create interview router
 const interviewRouter = express.Router()
 
-
-
-/**
- * @route POST /api/interview/
- * @description generate new interview report on the basis of user self description,resume pdf and job description.
- * @access private
- */
+// submit resume and job description to get analysis & prep report
 interviewRouter.post("/", authMiddleware.authUser, upload.single("resume"), interviewController.generateInterViewReportController)
 
-/**
- * @route GET /api/interview/report/:interviewId
- * @description get interview report by interviewId.
- * @access private
- */
+// get single report by its mongo id
 interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewController.getInterviewReportByIdController)
 
-
-/**
- * @route GET /api/interview/
- * @description get all interview reports of logged in user.
- * @access private
- */
+// get list of all interview reports for current user
 interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
 
-
-/**
- * @route GET /api/interview/resume/pdf
- * @description generate resume pdf on the basis of user self description, resume content and job description.
- * @access private
- */
+// generate customized resume pdf based on interview report
 interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
 
-
-
+// export interview router
 module.exports = interviewRouter

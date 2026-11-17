@@ -1,18 +1,16 @@
+// axios http client
 import axios from "axios";
 
+// create api client with cookie support
 const api = axios.create({
     baseURL: "http://localhost:3000",
     withCredentials: true,
 });
 
-/**
- * Storage key for user-configured BYOK and Local AI settings.
- */
+// localstorage key for byok settings
 export const BYOK_STORAGE_KEY = "byok_ai_config";
 
-/**
- * Helper to retrieve stored BYOK settings from browser localStorage.
- */
+// retrieve stored byok api keys from localstorage
 export const getStoredByokConfig = () => {
     try {
         const raw = localStorage.getItem(BYOK_STORAGE_KEY);
@@ -20,6 +18,7 @@ export const getStoredByokConfig = () => {
     } catch (e) {
         console.error("Failed to parse BYOK config from localStorage:", e);
     }
+    // fallback default settings
     return {
         provider: "default",
         apiKey: "",
@@ -28,21 +27,17 @@ export const getStoredByokConfig = () => {
     };
 };
 
-/**
- * Helper to persist BYOK configuration to localStorage.
- */
+// save byok settings to localstorage
 export const saveByokConfig = (config) => {
     localStorage.setItem(BYOK_STORAGE_KEY, JSON.stringify(config));
 };
 
-/**
- * Axios Request Interceptor:
- * Automatically reads the user's BYOK credentials from localStorage and attaches
- * them as custom request headers on every outgoing API call to our backend.
- */
+// request interceptor to attach custom byok headers to requests
 api.interceptors.request.use((config) => {
     try {
+        // read active byok configuration
         const byok = getStoredByokConfig();
+        // attach headers if non-default provider is configured
         if (byok && byok.provider && byok.provider !== "default") {
             config.headers["x-ai-provider"] = byok.provider;
             if (byok.apiKey) {
@@ -58,18 +53,18 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-/**
- * Directly communicates with OpenAI Chat Completions API (https://api.openai.com/v1/chat/completions).
- * Formats structured JSON response using OpenAI's response_format { type: "json_object" }.
- */
+// direct browser-to-openai api call
 async function generateViaOpenAI({ jobDescription, selfDescription, resumeFile, byokConfig }) {
+    // validate key
     const apiKey = byokConfig.apiKey;
     if (!apiKey) {
         throw new Error("OpenAI API Key is missing. Please configure your key in Settings.");
     }
 
+    // pick model
     const model = byokConfig.model || "gpt-4o-mini";
 
+    // build scoring prompt
     const prompt = `You are an elite technical interviewer, hiring manager, and talent strategist.
 Analyze the candidate's profile and target job description:
 
@@ -104,6 +99,7 @@ Use this exact JSON schema:
   ]
 }`;
 
+    // post to openai completions endpoint
     const response = await axios.post("https://api.openai.com/v1/chat/completions", {
         model,
         messages: [
@@ -125,11 +121,13 @@ Use this exact JSON schema:
         }
     });
 
+    // extract response text
     const content = response.data?.choices?.[0]?.message?.content;
     if (!content) {
         throw new Error("Empty response received from OpenAI API.");
     }
 
+    // parse json safely
     let parsed;
     try {
         parsed = JSON.parse(content);
@@ -138,6 +136,7 @@ Use this exact JSON schema:
         parsed = JSON.parse(cleaned);
     }
 
+    // build report object
     const localReport = {
         _id: "local-openai-" + Date.now(),
         title: parsed.title || "Target Position (OpenAI)",
@@ -151,6 +150,7 @@ Use this exact JSON schema:
         preparationPlan: Array.isArray(parsed.preparationPlan) ? parsed.preparationPlan : []
     };
 
+    // save locally in browser storage
     localStorage.setItem("local_report_" + localReport._id, JSON.stringify(localReport));
 
     return {
@@ -159,14 +159,13 @@ Use this exact JSON schema:
     };
 }
 
-/**
- * Directly communicates with a locally running Ollama instance (http://localhost:11434).
- * Bypasses the cloud backend completely for 100% private, on-device AI generation.
- */
+// direct local ollama api call
 async function generateViaOllama({ jobDescription, selfDescription, resumeFile, byokConfig }) {
+    // get ollama host and model
     const endpoint = (byokConfig.endpoint || "http://localhost:11434").replace(/\/$/, "");
     const model = byokConfig.model || "llama3";
 
+    // build prompt
     const prompt = `You are an expert technical recruiter and interview strategist.
 Analyze the candidate's profile and target job description:
 
@@ -201,6 +200,7 @@ Use this exact JSON structure:
   ]
 }`;
 
+    // post to local ollama endpoint
     const ollamaResponse = await axios.post(`${endpoint}/api/generate`, {
         model,
         prompt,
@@ -208,10 +208,12 @@ Use this exact JSON structure:
         stream: false
     });
 
+    // validate returned body
     if (!ollamaResponse.data || !ollamaResponse.data.response) {
         throw new Error("Ollama returned an empty response. Verify model is installed via 'ollama pull " + model + "'");
     }
 
+    // parse json
     let parsed;
     try {
         parsed = JSON.parse(ollamaResponse.data.response);
@@ -220,6 +222,7 @@ Use this exact JSON structure:
         parsed = JSON.parse(cleaned);
     }
 
+    // format local report
     const localReport = {
         _id: "local-ollama-" + Date.now(),
         title: parsed.title || "Target Position (Local AI)",
@@ -233,6 +236,7 @@ Use this exact JSON structure:
         preparationPlan: Array.isArray(parsed.preparationPlan) ? parsed.preparationPlan : []
     };
 
+    // store in browser
     localStorage.setItem("local_report_" + localReport._id, JSON.stringify(localReport));
 
     return {
@@ -241,16 +245,12 @@ Use this exact JSON structure:
     };
 }
 
-/**
- * Service to generate an interview report.
- * - If "OpenAI" is selected in BYOK settings, routes directly to https://api.openai.com/v1/chat/completions.
- * - If "Ollama Local" is selected, bypasses backend and directly queries http://localhost:11434.
- * - If "Groq", "Google Gemini", or "Default" is selected, forwards to the backend with appropriate BYOK headers.
- */
+// generate interview report based on active byok provider
 export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+    // read byok configuration
     const byok = getStoredByokConfig();
 
-    // ── 1. OpenAI Direct Client-Side Routing ─────────────────────────────────
+    // route to openai client-side if selected
     if (byok && byok.provider === "openai") {
         return await generateViaOpenAI({
             jobDescription,
@@ -260,7 +260,7 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
         });
     }
 
-    // ── 2. Ollama Local Direct Client-Side Routing ───────────────────────────
+    // route to ollama local client-side if selected
     if (byok && byok.provider === "ollama") {
         return await generateViaOllama({
             jobDescription,
@@ -270,12 +270,13 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
         });
     }
 
-    // ── 3. Groq, Gemini & System Default Cloud Backend Routing ───────────────
+    // forward to backend for groq, gemini or default
     const formData = new FormData();
     formData.append("jobDescription", jobDescription);
     formData.append("selfDescription", selfDescription);
     formData.append("resume", resumeFile);
 
+    // send multipart form data
     const response = await api.post("/api/interview/", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
@@ -285,11 +286,9 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     return response.data;
 };
 
-/**
- * Service to get interview report by interviewId.
- * Supports loading locally generated OpenAI and Ollama reports without hitting the backend.
- */
+// get single interview report by id
 export const getInterviewReportById = async (interviewId) => {
+    // check if this was a local client-side report
     if (interviewId && interviewId.startsWith("local-")) {
         const stored = localStorage.getItem("local_report_" + interviewId);
         if (stored) {
@@ -297,22 +296,20 @@ export const getInterviewReportById = async (interviewId) => {
         }
     }
 
+    // fetch from backend
     const response = await api.get(`/api/interview/report/${interviewId}`);
     return response.data;
 };
 
-/**
- * Service to get all interview reports of logged in user.
- */
+// fetch all reports for current user
 export const getAllInterviewReports = async () => {
     const response = await api.get("/api/interview/");
     return response.data;
 };
 
-/**
- * Service to generate resume pdf based on user self description, resume content and job description.
- */
+// download resume pdf
 export const generateResumePdf = async ({ interviewReportId }) => {
+    // request pdf blob
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
         responseType: "blob"
     });
@@ -320,19 +317,73 @@ export const generateResumePdf = async ({ interviewReportId }) => {
     return response.data;
 };
 
-/**
- * Service to fetch recommended job listings from Apify based on
- * an array of keywords derived from the user's resume.
- */
-export const getRecommendedJobs = async (keywords) => {
-    const response = await api.post("/api/jobs/recommend", { keywords });
+// request job recommendations by keywords and optional filters
+export const getRecommendedJobs = async (keywords, filters = {}) => {
+    // build query string from non-empty filter values
+    const params = new URLSearchParams();
+    if (filters.location && filters.location !== 'any') params.append('location', filters.location);
+    if (filters.experience && filters.experience !== 'any') params.append('exp', filters.experience);
+    if (filters.type && filters.type !== 'any') params.append('type', filters.type);
+
+    // post keywords array; send filters as query params
+    const queryString = params.toString();
+    const url = queryString ? `/api/jobs/recommend?${queryString}` : '/api/jobs/recommend';
+    const response = await api.post(url, { keywords });
     return response.data;
 };
 
-/**
- * Service to fetch all historical resume analyses and interview plans.
- */
+// fetch scan history list
 export const getHistory = async () => {
+    // query history endpoint
     const response = await api.get("/api/history");
     return response.data;
+};
+
+// localstorage key for persisting past recommended jobs
+export const PAST_JOBS_STORAGE_KEY = "past_recommended_jobs";
+
+// retrieve locally cached past recommended jobs
+export const getLocalPastJobs = () => {
+    try {
+        const raw = localStorage.getItem(PAST_JOBS_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) {
+        console.error("Failed to read past recommended jobs from localStorage:", e);
+    }
+    return [];
+};
+
+// save newly recommended jobs into local cache, merging & deduplicating
+export const saveLocalPastJobs = (newJobs) => {
+    if (!Array.isArray(newJobs) || newJobs.length === 0) return;
+    try {
+        const existing = getLocalPastJobs();
+        const seen = new Set();
+        const merged = [];
+
+        for (const job of [...newJobs, ...existing]) {
+            if (!job || !job.title || job.title === "N/A") continue;
+            const key = (job.url && job.url !== "#") ? job.url : `${job.title}::${job.company || ""}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                merged.push(job);
+            }
+        }
+
+        // keep up to 100 most recent recommended jobs
+        localStorage.setItem(PAST_JOBS_STORAGE_KEY, JSON.stringify(merged.slice(0, 100)));
+    } catch (e) {
+        console.error("Failed to persist past recommended jobs to localStorage:", e);
+    }
+};
+
+// fetch all past recommended jobs from backend API
+export const getPastRecommendations = async () => {
+    try {
+        const response = await api.get("/api/jobs/past-recommendations");
+        return response.data;
+    } catch (err) {
+        console.warn("Failed to fetch past recommendations from backend API:", err);
+        return { success: false, jobs: [] };
+    }
 };

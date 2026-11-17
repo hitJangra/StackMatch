@@ -1,4 +1,6 @@
+// react hooks
 import React, { useState, useEffect } from 'react';
+// icons
 import { 
     Sparkles, 
     KeyRound, 
@@ -20,12 +22,18 @@ import {
     Lock,
     Key
 } from 'lucide-react';
+// auth hook
 import { useAuth } from '../../auth/hooks/useAuth';
+// theme hook
 import { useTheme } from '../../theme/theme.context';
+// toast alerts hook
 import { useToast } from '../../../components/Toast';
+// byok storage helpers
 import { getStoredByokConfig, saveByokConfig } from '../services/interview.api';
+// password update api
 import { updatePassword } from '../../auth/services/auth.api';
 
+// provider choices
 const PROVIDER_OPTIONS = [
     { id: 'default', label: 'System Default (Gemini)' },
     { id: 'openai', label: 'OpenAI (GPT-3.5/4o)' },
@@ -34,30 +42,37 @@ const PROVIDER_OPTIONS = [
     { id: 'ollama', label: 'Ollama (Local AI)' }
 ];
 
+// openai model choices
 const OPENAI_MODELS = [
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast & Recommended)' },
     { id: 'gpt-4o', name: 'GPT-4o (Flagship Multimodal)' },
     { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Legacy)' }
 ];
 
+// gemini model choices
 const GEMINI_MODELS = [
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommended)' },
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Deep Reasoning)' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Legacy)' }
 ];
 
+// groq model choices
 const GROQ_MODELS = [
     { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile (Recommended)' },
     { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (Fast)' },
     { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B 32k' }
 ];
 
+// settings view for api keys, theme, and password
 const Settings = () => {
+    // authenticated user
     const { user } = useAuth();
+    // theme switcher
     const { theme, toggleTheme } = useTheme();
+    // toast notifications
     const { addToast } = useToast();
 
-    // AI Provider Configuration State
+    // byok provider state
     const [selectedProvider, setSelectedProvider] = useState('default');
     const [apiKey, setApiKey] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
@@ -65,7 +80,7 @@ const Settings = () => {
     const [showKey, setShowKey] = useState(false);
     const [testingOllama, setTestingOllama] = useState(false);
 
-    // Change Password State
+    // change password form state
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,7 +89,7 @@ const Settings = () => {
     const [showConfirmPass, setShowConfirmPass] = useState(false);
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-    // Free Scans Simulation Counter
+    // monthly scan usage tracker simulation
     const usedScans = 3;
     const totalScans = 10;
     const scansPercentage = Math.round((usedScans / totalScans) * 100);
@@ -82,7 +97,7 @@ const Settings = () => {
     const circumference = 2 * Math.PI * circleRadius;
     const strokeDashoffset = circumference - (circumference * scansPercentage) / 100;
 
-    // Load initial settings on mount
+    // load saved settings from storage
     useEffect(() => {
         const stored = getStoredByokConfig();
         setSelectedProvider(stored.provider || 'default');
@@ -91,9 +106,11 @@ const Settings = () => {
         setOllamaEndpoint(stored.endpoint || 'http://localhost:11434');
     }, []);
 
+    // handle provider dropdown change
     const handleProviderChange = (e) => {
         const prov = e.target.value;
         setSelectedProvider(prov);
+        // set default recommended model for selected provider
         if (prov === 'openai') {
             setSelectedModel('gpt-4o-mini');
         } else if (prov === 'gemini') {
@@ -107,12 +124,15 @@ const Settings = () => {
         }
     };
 
+    // save ai engine configuration
     const handleSaveAiConfig = () => {
+        // require api key for cloud providers
         if (['openai', 'gemini', 'groq'].includes(selectedProvider) && !apiKey.trim()) {
             addToast(`Please provide a valid API key for ${selectedProvider.toUpperCase()}.`, "warning");
             return;
         }
 
+        // construct settings payload
         const configToSave = {
             provider: selectedProvider,
             apiKey: apiKey.trim(),
@@ -120,10 +140,12 @@ const Settings = () => {
             endpoint: ollamaEndpoint.trim() || 'http://localhost:11434'
         };
 
+        // persist in localstorage
         saveByokConfig(configToSave);
         addToast(`AI Engine settings saved! Active Provider: ${selectedProvider.toUpperCase()}`, "success");
     };
 
+    // reset ai settings back to system default
     const handleResetAiConfig = () => {
         const resetConfig = {
             provider: 'default',
@@ -131,6 +153,7 @@ const Settings = () => {
             model: '',
             endpoint: 'http://localhost:11434'
         };
+        // write defaults
         saveByokConfig(resetConfig);
         setSelectedProvider('default');
         setApiKey('');
@@ -139,9 +162,11 @@ const Settings = () => {
         addToast("Reset to system default AI provider.", "info");
     };
 
+    // test local ollama connection
     const handleTestOllama = async () => {
         setTestingOllama(true);
         try {
+            // ping ollama tags endpoint
             const cleanUrl = (ollamaEndpoint.trim() || 'http://localhost:11434').replace(/\/$/, '');
             const res = await fetch(`${cleanUrl}/api/tags`);
             if (res.ok) {
@@ -158,18 +183,22 @@ const Settings = () => {
         }
     };
 
+    // submit password change
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
+        // validate required inputs
         if (!currentPassword || !newPassword || !confirmPassword) {
             addToast("Please fill in all password fields.", "warning");
             return;
         }
 
+        // check password confirmation
         if (newPassword !== confirmPassword) {
             addToast("New password and confirmation password do not match.", "warning");
             return;
         }
 
+        // check length
         if (newPassword.length < 6) {
             addToast("New password must be at least 6 characters long.", "warning");
             return;
@@ -177,11 +206,13 @@ const Settings = () => {
 
         setIsUpdatingPassword(true);
         try {
+            // call backend update password endpoint
             await updatePassword({
                 currentPassword,
                 newPassword
             });
             addToast("Password changed successfully!", "success");
+            // clear form
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
@@ -194,8 +225,9 @@ const Settings = () => {
     };
 
     return (
+        // settings page container
         <div className="min-h-screen flex flex-col w-full overflow-y-scroll space-y-8 max-w-4xl animate-in fade-in duration-300 pb-16">
-            {/* Header */}
+            {/* page header */}
             <div className="pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -210,7 +242,7 @@ const Settings = () => {
                 </p>
             </div>
 
-            {/* Section 1: AI Provider Selection & BYOK Config Card (Rigid min-h constraint) */}
+            {/* ai engine provider configuration card */}
             <div className="min-h-[420px] p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col justify-between space-y-6">
                 <div className="space-y-6">
                     <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
@@ -225,7 +257,7 @@ const Settings = () => {
                         </span>
                     </div>
 
-                    {/* Dropdown Selector */}
+                    {/* provider selector dropdown */}
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                             Choose AI Engine
@@ -250,11 +282,10 @@ const Settings = () => {
                         </p>
                     </div>
 
-                    {/* Conditional Rendering Below Dropdown */}
-                    {/* a) System Default: Circular Progress Indicator */}
+                    {/* default free tier meter */}
                     {selectedProvider === 'default' && (
                         <div className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 flex flex-col sm:flex-row items-center gap-6">
-                            {/* Circular Meter */}
+                            {/* circular progress svg */}
                             <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
                                 <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 96 96">
                                     <circle
@@ -289,7 +320,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {/* Details text */}
+                            {/* quota explanation */}
                             <div className="space-y-1.5 text-center sm:text-left">
                                 <div className="flex items-center justify-center sm:justify-start gap-2">
                                     <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
@@ -306,7 +337,7 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {/* b) OpenAI BYOK Input */}
+                    {/* openai api key input */}
                     {selectedProvider === 'openai' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="space-y-1.5">
@@ -321,6 +352,7 @@ const Settings = () => {
                                         placeholder="sk-proj-..."
                                         className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 text-xs font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all shadow-xs"
                                     />
+                                    {/* toggle key visibility */}
                                     <button
                                         type="button"
                                         onClick={() => setShowKey(!showKey)}
@@ -343,6 +375,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
+                            {/* model dropdown */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     OpenAI Model
@@ -362,7 +395,7 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {/* c) Google Gemini BYOK Input */}
+                    {/* gemini api key input */}
                     {selectedProvider === 'gemini' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="space-y-1.5">
@@ -399,6 +432,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
+                            {/* gemini model dropdown */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     Gemini Model
@@ -418,7 +452,7 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {/* d) Groq Cloud BYOK Input */}
+                    {/* groq api key input */}
                     {selectedProvider === 'groq' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="space-y-1.5">
@@ -455,6 +489,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
+                            {/* groq model dropdown */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     Groq Model
@@ -474,9 +509,10 @@ const Settings = () => {
                         </div>
                     )}
 
-                    {/* e) Ollama Local Inputs */}
+                    {/* ollama local host and model input */}
                     {selectedProvider === 'ollama' && (
                         <div className="space-y-4 animate-in fade-in duration-200">
+                            {/* info badge */}
                             <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
                                 <div className="flex items-center gap-1.5 font-semibold">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -487,6 +523,7 @@ const Settings = () => {
                                 </p>
                             </div>
 
+                            {/* host and model inputs */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
@@ -515,6 +552,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
+                            {/* test connection button */}
                             <div className="flex items-center justify-between pt-1">
                                 <button
                                     type="button"
@@ -533,7 +571,7 @@ const Settings = () => {
                     )}
                 </div>
 
-                {/* Save & Reset Actions Toolbar */}
+                {/* save / reset buttons */}
                 <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                     <button
                         type="button"
@@ -555,7 +593,7 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Section 2: Appearance Section (Rigid min-h constraint) */}
+            {/* appearance toggle card */}
             <div className="min-h-[140px] p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col justify-between space-y-4">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2.5">
@@ -577,7 +615,7 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Section 3: Account Information & Change Password (Rigid min-h constraint) */}
+            {/* profile information & change password */}
             <div className="min-h-[440px] p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
                     <div className="flex items-center gap-2.5">
@@ -589,7 +627,7 @@ const Settings = () => {
                     </span>
                 </div>
 
-                {/* Profile Overview */}
+                {/* read-only profile overview */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">Username</label>
@@ -605,7 +643,7 @@ const Settings = () => {
                     </div>
                 </div>
 
-                {/* Change Password Form */}
+                {/* change password form */}
                 <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
                     <div className="flex items-center gap-2">
                         <Lock className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
@@ -619,7 +657,7 @@ const Settings = () => {
 
                     <form onSubmit={handlePasswordUpdate} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {/* Current Password */}
+                            {/* current password */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     Current Password
@@ -642,7 +680,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {/* New Password */}
+                            {/* new password */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     New Password
@@ -665,7 +703,7 @@ const Settings = () => {
                                 </div>
                             </div>
 
-                            {/* Confirm New Password */}
+                            {/* confirm password */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
                                     Confirm New Password
@@ -689,6 +727,7 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* submit password button */}
                         <div className="pt-2 flex justify-end">
                             <button
                                 type="submit"
@@ -706,4 +745,5 @@ const Settings = () => {
     );
 };
 
+// export settings page
 export default Settings;

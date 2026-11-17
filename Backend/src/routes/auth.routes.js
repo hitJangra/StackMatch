@@ -1,42 +1,27 @@
+// express router
 const { Router } = require('express')
+// auth controller functions
 const authController = require("../controllers/auth.controller")
+// authentication middleware
 const authMiddleware = require("../middlewares/auth.middleware")
 
+// create router instance
 const authRouter = Router()
 
-/**
- * @route POST /api/auth/register
- * @description Register a new user
- * @access Public
- */
+// register new user account
 authRouter.post("/register", authController.registerUserController)
 
-/**
- * @route POST /api/auth/login
- * @description login user with email and password
- * @access Public
- */
+// sign in with email and password
 authRouter.post("/login", authController.loginUserController)
 
-/**
- * @route GET /api/auth/logout
- * @description clear token from user cookie and add the token in blacklist
- * @access public
- */
+// sign out and blacklist current token
 authRouter.get("/logout", authController.logoutUserController)
 
-/**
- * @route GET /api/auth/get-me
- * @description get the current logged in user details
- * @access private
- */
+// fetch profile of authenticated user
 authRouter.get("/get-me", authMiddleware.authUser, authController.getMeController)
 
-/**
- * @route PUT /api/auth/update-password
- * @description update the authenticated user's password
- * @access private
- */
+// update user password (protected)
 authRouter.put("/update-password", authMiddleware.authUser, authController.updatePasswordController)
 
+// export auth router
 module.exports = authRouter

@@ -1,5 +1,8 @@
+// react hooks
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+// navigation hook
+import { useNavigate, useLocation } from 'react-router';
+// ui icons
 import { 
     Sparkles, 
     Upload, 
@@ -15,40 +18,70 @@ import {
     Search,
     AlertCircle
 } from 'lucide-react';
+// interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
+// spinner component
 import Spinner from '../../../components/Spinner';
+// toast notifications
 import { useToast } from '../../../components/Toast';
-import { getRecommendedJobs } from '../services/interview.api.js';
+// api call to fetch recommended jobs and persist them
+import { getRecommendedJobs, saveLocalPastJobs } from '../services/interview.api.js';
+// helper for linkedin job urls
+import { getLinkedInJobUrl } from '../../../utils/linkedin.js';
 
+// home dashboard component for scanning resumes and getting recommendations
 const Home = () => {
+    // interview state and actions
     const { loading, generateReport, reports, getReports } = useInterview();
+    // job description textarea input
     const [jobDescription, setJobDescription] = useState("");
+    // optional candidate self-summary
     const [selfDescription, setSelfDescription] = useState("");
+    // selected resume filename display
     const [selectedFileName, setSelectedFileName] = useState("");
+    // hidden file input ref
     const resumeInputRef = useRef();
 
-    // AI Job Recommender state
+    // recommended jobs state
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [jobsLoading, setJobsLoading] = useState(false);
     const [analyzingResume, setAnalyzingResume] = useState(false);
     const [matchingJobId, setMatchingJobId] = useState(null);
 
+    // router and toast
     const navigate = useNavigate();
+    const location = useLocation();
     const { addToast } = useToast();
 
+    // fetch past scan reports on page load and handle state from job board
     useEffect(() => {
         getReports();
-    }, []);
 
+        // check if user clicked "Match & Prep" from Jobs page
+        if (location.state?.jobDescription) {
+            setJobDescription(location.state.jobDescription);
+            addToast("Target job description loaded!", "info");
+        } else if (location.state?.targetJob) {
+            const tj = location.state.targetJob;
+            setJobDescription(tj.description || `${tj.title} at ${tj.company}`);
+            addToast(`Loaded ${tj.title} for matching!`, "info");
+        }
+    }, [location.state]);
+
+    // handle resume file selection
     const handleFileChange = (e) => {
         const file = e.target.files[0];
+        // update filename display
         if (file) setSelectedFileName(file.name);
         else setSelectedFileName("");
     };
 
+    // submit resume and job description for full interview report
     const handleGenerateReport = async () => {
+        // grab uploaded file
         const resumeFile = resumeInputRef.current.files[0];
 
+        // check required inputs
         if (!jobDescription.trim()) {
             addToast("Please enter a target job description.", "warning");
             return;
@@ -57,23 +90,28 @@ const Home = () => {
             addToast("Please upload a resume or provide a self-description.", "warning");
             return;
         }
+        // file size check
         if (resumeFile && resumeFile.size > 3 * 1024 * 1024) {
             addToast("Resume file must be 3MB or smaller.", "warning");
             return;
         }
 
         try {
+            // call report generation
             const data = await generateReport({ jobDescription, selfDescription, resumeFile });
             addToast("Interview plan generated!", "success");
+            // redirect to report details view
             navigate(`/interview/${data._id}`);
         } catch (err) {
             addToast("Failed to generate report. Please try again.", "error");
         }
     };
 
+    // automatically extract keywords from resume and scrape matching jobs
     const handleAutoAnalyze = async () => {
         const resumeFile = resumeInputRef.current.files[0];
 
+        // require resume file
         if (!resumeFile) {
             addToast("Please upload your resume PDF first.", "warning");
             return;
@@ -84,20 +122,25 @@ const Home = () => {
         }
 
         try {
+            // set loading states
             setAnalyzingResume(true);
             addToast("Analysing resume for target roles…", "info");
 
+            // build form data
             const formData = new FormData();
             formData.append("resume", resumeFile);
             formData.append("selfDescription", selfDescription || "");
 
+            // dynamically import axios
             const { default: axios } = await import("axios");
             const api = axios.create({ baseURL: "http://localhost:3000", withCredentials: true });
 
+            // request keywords extraction
             const { data: keywordData } = await api.post("/api/interview/", formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
+            // validate keywords
             if (keywordData.mode !== "keyword_recommendation" || !keywordData.recommendedJobKeywords?.length) {
                 addToast("Could not extract keywords. Try adding a job description.", "warning");
                 return;
@@ -105,14 +148,23 @@ const Home = () => {
 
             addToast(`Matched roles: ${keywordData.recommendedJobKeywords.join(", ")}`, "success");
 
+            // search live jobs with keywords
             setJobsLoading(true);
             const jobData = await getRecommendedJobs(keywordData.recommendedJobKeywords);
-            setRecommendedJobs(jobData.jobs || []);
+            const fetchedJobs = jobData.jobs || [];
+            setRecommendedJobs(fetchedJobs);
 
-            if (!jobData.jobs?.length) {
+            // save all recommended jobs to past recommendations (even if not matched)
+            if (fetchedJobs.length > 0) {
+                saveLocalPastJobs(fetchedJobs);
+            }
+
+            // feedback to user
+            if (!fetchedJobs.length) {
                 addToast("No live jobs found for this profile right now.", "info");
             } else {
-                addToast(`Found ${jobData.jobs.length} recommendations!`, "success");
+                addToast(`Found ${fetchedJobs.length} recommendations!`, "success");
+                // scroll down to recommendations
                 setTimeout(() => {
                     document.getElementById("job-recommendations")?.scrollIntoView({ behavior: "smooth" });
                 }, 300);
@@ -121,11 +173,13 @@ const Home = () => {
             console.error("Auto-analyze error:", err);
             addToast("Failed to fetch recommendations.", "error");
         } finally {
+            // clear loading flags
             setAnalyzingResume(false);
             setJobsLoading(false);
         }
     };
 
+    // one-click match a recommended job to the uploaded resume
     const handleMatchToJob = async (jobDesc, cardUrl) => {
         const resumeFile = resumeInputRef.current?.files[0];
 
@@ -134,9 +188,11 @@ const Home = () => {
             return;
         }
 
+        // populate textarea
         setJobDescription(jobDesc);
 
         try {
+            // track which card is analyzing
             setMatchingJobId(cardUrl);
             const data = await generateReport({
                 jobDescription: jobDesc,
@@ -152,27 +208,29 @@ const Home = () => {
         }
     };
 
+    // show full-screen spinner if generating plan
     if (loading && !jobsLoading && !analyzingResume) {
         return <Spinner message="Generating your interview plan..." />;
     }
 
     return (
+        // main dashboard container
         <div className="space-y-10 w-full animate-in fade-in duration-300">
-            {/* Header Section */}
+            {/* page title header */}
             <div className="pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    AI Resume Screener & Interview Prep
+                    StackMatch — Resume Screener & Interview Prep
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-2xl">
                     Upload your resume to receive instantaneous role alignment, ATS scoring, custom interview roadmaps, and matching market opportunities.
                 </p>
             </div>
 
-            {/* Main Interactive Studio Card */}
+            {/* scan inputs card */}
             <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800">
                     
-                    {/* Left Column: Target Job Description */}
+                    {/* target job description column */}
                     <div className="p-6 sm:p-7 space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -190,6 +248,7 @@ const Home = () => {
                             Paste the full job listing here to evaluate tailored questions and skill gaps, or leave empty to discover roles based on your resume.
                         </p>
 
+                        {/* job description text area */}
                         <div className="space-y-1.5">
                             <textarea
                                 value={jobDescription}
@@ -199,13 +258,14 @@ const Home = () => {
                                 rows={10}
                                 className="w-full p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all resize-none"
                             />
+                            {/* character count */}
                             <div className="text-[11px] text-zinc-400 font-mono text-right">
                                 {jobDescription.length} / 5000 chars
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Candidate Profile & Resume Upload */}
+                    {/* resume upload column */}
                     <div className="p-6 sm:p-7 space-y-5 flex flex-col justify-between">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -220,7 +280,7 @@ const Home = () => {
                                 </span>
                             </div>
 
-                            {/* Dropzone */}
+                            {/* file dropzone */}
                             <label 
                                 htmlFor="resume-upload"
                                 className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center ${
@@ -248,7 +308,7 @@ const Home = () => {
                                 </p>
                             </label>
 
-                            {/* Self-Description alternative */}
+                            {/* alternative summary text area */}
                             <div className="space-y-2 pt-1">
                                 <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
                                     <span>Or Quick Self-Description</span>
@@ -263,7 +323,7 @@ const Home = () => {
                             </div>
                         </div>
 
-                        {/* Instructions */}
+                        {/* tip badge */}
                         <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                             <CheckCircle className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
                             <span>Upload a resume or enter a brief summary to generate personalized recommendations.</span>
@@ -271,14 +331,14 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Studio Footer Action Bar */}
+                {/* card action buttons */}
                 <div className="px-6 py-4 bg-zinc-50/70 dark:bg-zinc-950/50 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         Powered by Gemini 2.5 Flash & Apify live scraping
                     </span>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                        {/* Auto-Analyze / Recommend Jobs button */}
+                        {/* auto-discover matching jobs */}
                         <button
                             onClick={handleAutoAnalyze}
                             disabled={analyzingResume || jobsLoading}
@@ -288,7 +348,7 @@ const Home = () => {
                             <span>{analyzingResume ? "Analyzing Resume..." : jobsLoading ? "Searching Jobs..." : "Find Matching Jobs"}</span>
                         </button>
 
-                        {/* Full Strategy Report button */}
+                        {/* generate full interview strategy */}
                         <button
                             onClick={handleGenerateReport}
                             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer"
@@ -300,7 +360,7 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* AI Job Recommendations Section */}
+            {/* live recommended job cards */}
             {(recommendedJobs.length > 0 || jobsLoading) && (
                 <section id="job-recommendations" className="space-y-4 pt-4">
                     <div>
@@ -312,6 +372,7 @@ const Home = () => {
                         </p>
                     </div>
 
+                    {/* loading skeleton */}
                     {jobsLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {[1, 2, 3].map(i => (
@@ -323,6 +384,7 @@ const Home = () => {
                             ))}
                         </div>
                     ) : (
+                        // job cards grid
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {recommendedJobs.map((job, idx) => (
                                 <div
@@ -330,9 +392,20 @@ const Home = () => {
                                     className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
                                 >
                                     <div className="space-y-3">
+                                        {/* job title — clickable link to linkedin */}
                                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
-                                            {job.title}
+                                            <a
+                                                href={getLinkedInJobUrl(job)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
+                                                title="View & apply for this job on LinkedIn"
+                                            >
+                                                <span className="line-clamp-1">{job.title}</span>
+                                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
+                                            </a>
                                         </h3>
+                                        {/* company and location metadata */}
                                         <div className="flex flex-wrap gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                                             {job.company && (
                                                 <span className="inline-flex items-center gap-1">
@@ -347,6 +420,7 @@ const Home = () => {
                                                 </span>
                                             )}
                                         </div>
+                                        {/* snippet */}
                                         {job.description && (
                                             <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
                                                 {job.description}
@@ -354,6 +428,7 @@ const Home = () => {
                                         )}
                                     </div>
 
+                                    {/* actions */}
                                     <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex gap-2">
                                         {job.url && job.url !== '#' && (
                                             <a
@@ -367,6 +442,7 @@ const Home = () => {
                                             </a>
                                         )}
 
+                                        {/* generate plan for this card */}
                                         <button
                                             onClick={() => handleMatchToJob(job.description || `${job.title} at ${job.company}`, job.url)}
                                             disabled={matchingJobId === job.url}
@@ -383,13 +459,14 @@ const Home = () => {
                 </section>
             )}
 
-            {/* Recent Scans Overview */}
+            {/* recent scan history snippet */}
             {reports.length > 0 && (
                 <section className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                             Recent Scans
                         </h2>
+                        {/* link to full history */}
                         <button
                             onClick={() => navigate('/history')}
                             className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer"
@@ -398,6 +475,7 @@ const Home = () => {
                         </button>
                     </div>
 
+                    {/* recent 3 reports */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {reports.slice(0, 3).map((report) => (
                             <div 
@@ -407,9 +485,21 @@ const Home = () => {
                             >
                                 <div className="space-y-2">
                                     <div className="flex items-start justify-between gap-2">
+                                        {/* job position title — clickable link to linkedin */}
                                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
-                                            {report.title || 'Target Position'}
+                                            <a
+                                                href={getLinkedInJobUrl(report.title || 'Target Position')}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
+                                                title="Search & apply on LinkedIn"
+                                            >
+                                                <span className="line-clamp-1">{report.title || 'Target Position'}</span>
+                                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
+                                            </a>
                                         </h3>
+                                        {/* match percentage badge */}
                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                                             report.matchScore >= 80 
                                                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' 
@@ -438,4 +528,5 @@ const Home = () => {
     );
 };
 
+// export home component
 export default Home;

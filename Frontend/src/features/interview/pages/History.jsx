@@ -1,5 +1,8 @@
+// react hooks
 import React, { useEffect, useState, useMemo } from 'react';
+// navigation hook
 import { useNavigate } from 'react-router';
+// ui icons
 import { 
     Clock, 
     ArrowUpRight, 
@@ -12,18 +15,28 @@ import {
     TrendingUp,
     Briefcase
 } from 'lucide-react';
+// history api fetcher
 import { getHistory } from '../services/interview.api';
+// helper for linkedin job urls
+import { getLinkedInJobUrl } from '../../../utils/linkedin';
 
+// scan history archive page
 const History = () => {
+    // list of scans
     const [scans, setScans] = useState([]);
+    // loading state
     const [loading, setLoading] = useState(true);
+    // search query input
     const [searchQuery, setSearchQuery] = useState('');
+    // router navigation
     const navigate = useNavigate();
 
+    // fetch all scans on mount
     useEffect(() => {
         const fetchHistory = async () => {
             try {
                 setLoading(true);
+                // query backend for history
                 const data = await getHistory();
                 setScans(data?.history || []);
             } catch (err) {
@@ -36,7 +49,7 @@ const History = () => {
         fetchHistory();
     }, []);
 
-    // Filter scans by search query
+    // filter scans based on search keyword
     const filteredScans = useMemo(() => {
         if (!searchQuery.trim()) return scans;
         const q = searchQuery.toLowerCase();
@@ -46,7 +59,7 @@ const History = () => {
         );
     }, [scans, searchQuery]);
 
-    // Aggregate statistics
+    // compute aggregate metrics
     const stats = useMemo(() => {
         if (!scans.length) return { total: 0, avgScore: 0, highest: 0 };
         const total = scans.length;
@@ -56,6 +69,7 @@ const History = () => {
         return { total, avgScore, highest };
     }, [scans]);
 
+    // format timestamp into human readable date
     const formatDate = (dateString) => {
         if (!dateString) return 'Recent';
         const date = new Date(dateString);
@@ -66,6 +80,7 @@ const History = () => {
         }).format(date);
     };
 
+    // get badge styles according to score value
     const getScoreBadge = (score) => {
         const s = score || 0;
         if (s >= 80) {
@@ -90,8 +105,9 @@ const History = () => {
     };
 
     return (
+        // history container
         <div className="space-y-8 animate-in fade-in duration-300">
-            {/* Header Section */}
+            {/* page header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -102,6 +118,7 @@ const History = () => {
                     </p>
                 </div>
 
+                {/* button to initiate new scan */}
                 <button
                     onClick={() => navigate('/')}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all self-start sm:self-auto cursor-pointer"
@@ -111,9 +128,10 @@ const History = () => {
                 </button>
             </div>
 
-            {/* Quick Stats Overview */}
+            {/* aggregate stats cards */}
             {scans.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* total evaluations */}
                     <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex items-center gap-3.5">
                         <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center flex-shrink-0">
                             <Clock className="w-5 h-5 text-indigo-500" />
@@ -124,6 +142,7 @@ const History = () => {
                         </div>
                     </div>
 
+                    {/* average score */}
                     <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex items-center gap-3.5">
                         <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center flex-shrink-0">
                             <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -134,6 +153,7 @@ const History = () => {
                         </div>
                     </div>
 
+                    {/* best score */}
                     <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex items-center gap-3.5">
                         <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center flex-shrink-0">
                             <Award className="w-5 h-5 text-amber-500" />
@@ -146,7 +166,7 @@ const History = () => {
                 </div>
             )}
 
-            {/* Search Filter Bar */}
+            {/* search filter input */}
             {scans.length > 0 && (
                 <div className="relative">
                     <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -160,7 +180,7 @@ const History = () => {
                 </div>
             )}
 
-            {/* Content State: Loading Skeleton */}
+            {/* loading state skeletons */}
             {loading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -180,7 +200,7 @@ const History = () => {
                 </div>
             )}
 
-            {/* Content State: Empty Results */}
+            {/* empty state */}
             {!loading && filteredScans.length === 0 && (
                 <div className="text-center py-16 px-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
                     <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto flex items-center justify-center mb-4">
@@ -207,7 +227,7 @@ const History = () => {
                 </div>
             )}
 
-            {/* Content State: Analysis Cards Grid */}
+            {/* cards list */}
             {!loading && filteredScans.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredScans.map((scan) => {
@@ -218,10 +238,20 @@ const History = () => {
                                 className="group relative rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
                             >
                                 <div className="space-y-3">
-                                    {/* Top Row: Title & ATS Score Badge */}
+                                    {/* role title and ats score */}
                                     <div className="flex items-start justify-between gap-3">
-                                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                            {scan.title || "Target Position"}
+                                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+                                            <a
+                                                href={getLinkedInJobUrl(scan.title || "Target Position")}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
+                                                title="Search & apply on LinkedIn"
+                                            >
+                                                <span className="line-clamp-1">{scan.title || "Target Position"}</span>
+                                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
+                                            </a>
                                         </h3>
                                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border flex-shrink-0 ${badge.badgeClass}`}>
                                             <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
@@ -229,13 +259,13 @@ const History = () => {
                                         </span>
                                     </div>
 
-                                    {/* Date Row */}
+                                    {/* scan timestamp */}
                                     <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                                         <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                                         <span>{formatDate(scan.createdAt)}</span>
                                     </div>
 
-                                    {/* Snippet */}
+                                    {/* target job preview */}
                                     {scan.jobDescription && (
                                         <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed pt-1">
                                             {scan.jobDescription}
@@ -243,7 +273,7 @@ const History = () => {
                                     )}
                                 </div>
 
-                                {/* Action Footer */}
+                                {/* open report link */}
                                 <div className="pt-5 mt-4 border-t border-zinc-100 dark:border-zinc-800/80">
                                     <button
                                         onClick={() => navigate(`/interview/${scan._id}`)}
@@ -262,4 +292,5 @@ const History = () => {
     );
 };
 
+// export history page
 export default History;
