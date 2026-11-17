@@ -2,23 +2,22 @@
 const crypto = require("crypto")
 // pdf parser to extract text from uploaded resumes
 const { PDFParse } = require("pdf-parse")
-// ai service helpers for gemini prompts and pdf rendering
-const { generateInterviewReport, generateResumePdf, generateJobKeywords } = require("../services/ai.service")
-// mongo models for report storage and caching
+// ai service helpers for gemini/openai/groq prompts
+const { generateInterviewReport, generateJobKeywords } = require("../services/ai.service")
+// unified mongo models for report storage and caching
 const interviewReportModel = require("../models/interviewReport.model")
 const CachedScores = require("../models/cachedScores.model")
 
 // create unique sha256 hash based on resume text and job desc
-function generateScoreCacheKey({ resumeText, jobDescription, selfDescription = "", aiProvider = "default", aiModel = "default" }) {
+function generateScoreCacheKey({ resumeText, jobDescription, aiProvider = "default", aiModel = "default" }) {
     // strip extra whitespace and normalize line endings
     const normResume = (resumeText || "").trim().replace(/\r\n/g, "\n")
     const normJob = (jobDescription || "").trim().replace(/\r\n/g, "\n")
-    const normSelf = (selfDescription || "").trim().replace(/\r\n/g, "\n")
     const normProvider = (aiProvider || "default").toLowerCase().trim()
     const normModel = (aiModel || "default").toLowerCase().trim()
 
     // concatenate into single string
-    const payload = `${normResume}:::${normJob}:::${normSelf}:::${normProvider}:::${normModel}`
+    const payload = `${normResume}:::${normJob}:::${normProvider}:::${normModel}`
     // generate hex digest
     return crypto.createHash("sha256").update(payload).digest("hex")
 }
@@ -26,6 +25,12 @@ function generateScoreCacheKey({ resumeText, jobDescription, selfDescription = "
 // controller to parse resume, score against job description, and generate prep report
 async function generateInterViewReportController(req, res, next) {
     try {
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({
+                message: "Resume PDF file is required."
+            })
+        }
+
         // read file buffer into pdf parser
         const parser = new PDFParse({ data: req.file.buffer })
         // extract raw text from pdf
@@ -33,8 +38,8 @@ async function generateInterViewReportController(req, res, next) {
         // clean up parser instance
         await parser.destroy()
 
-        // get user input from form body
-        const { selfDescription, jobDescription } = req.body
+        // get job description from form body
+        const { jobDescription } = req.body
 
         // read custom api key headers if user provided BYOK
         const customApiKey = req.headers["x-ai-api-key"] || req.headers["x-api-key"] || null
@@ -62,7 +67,6 @@ async function generateInterViewReportController(req, res, next) {
         const cacheKey = generateScoreCacheKey({
             resumeText: resumeContent.text,
             jobDescription,
-            selfDescription,
             aiProvider,
             aiModel
         })
@@ -85,10 +89,9 @@ async function generateInterViewReportController(req, res, next) {
                 preparationPlan: cachedScore.preparationPlan
             }
         } else {
-            // cache miss: call gemini ai service
+            // cache miss: call unified ai service (Gemini / OpenAI / Groq)
             interViewReportByAi = await generateInterviewReport({
                 resume: resumeContent.text,
-                selfDescription,
                 jobDescription,
                 customApiKey,
                 aiProvider,
@@ -117,11 +120,10 @@ async function generateInterViewReportController(req, res, next) {
             }
         }
 
-        // save report to database under user's profile
+        // save report to database under user's profile in unified InterviewReport model
         const interviewReport = await interviewReportModel.create({
             user: req.user.id,
             resume: resumeContent.text,
-            selfDescription,
             jobDescription,
             ...interViewReportByAi
         })
@@ -144,7 +146,7 @@ async function getInterviewReportByIdController(req, res, next) {
         // get report id from url params
         const { interviewId } = req.params
 
-        // find report belonging to logged-in user
+        // find report belonging to logged-in user in unified model
         const interviewReport = await interviewReportModel.findOne({ _id: interviewId, user: req.user.id })
 
         // return 404 if not found
@@ -168,10 +170,10 @@ async function getInterviewReportByIdController(req, res, next) {
 // fetch summary list of all reports for user
 async function getAllInterviewReportsController(req, res, next) {
     try {
-        // query all reports for user, omit heavy fields
+        // query all reports for user from unified model, omit heavy fields
         const interviewReports = await interviewReportModel.find({ user: req.user.id })
             .sort({ createdAt: -1 }) // newest first
-            .select("-resume -selfDescription -jobDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
+            .select("-resume -jobDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
 
         // return list
         res.status(200).json({
@@ -184,58 +186,9 @@ async function getAllInterviewReportsController(req, res, next) {
     }
 }
 
-// generate optimized resume pdf
-async function generateResumePdfController(req, res, next) {
-    try {
-        // grab report id from params
-        const { interviewReportId } = req.params
-
-        // find report
-        const interviewReport = await interviewReportModel.findById(interviewReportId)
-
-        // return 404 if not found
-        if (!interviewReport) {
-            return res.status(404).json({
-                message: "Interview report not found."
-            })
-        }
-
-        // check custom api key headers
-        const customApiKey = req.headers["x-ai-api-key"] || req.headers["x-api-key"] || null
-        const aiProvider = (req.headers["x-ai-provider"] || "default").toLowerCase()
-        const aiModel = req.headers["x-ai-model"] || null
-
-        // unpack report fields
-        const { resume, jobDescription, selfDescription } = interviewReport
-
-        // generate pdf binary buffer
-        const pdfBuffer = await generateResumePdf({ 
-            resume, 
-            jobDescription, 
-            selfDescription,
-            customApiKey,
-            aiProvider,
-            aiModel
-        })
-
-        // set response headers for file download
-        res.set({
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
-        })
-
-        // send pdf binary data
-        res.send(pdfBuffer)
-    } catch (err) {
-        // forward error
-        next(err)
-    }
-}
-
 // export controller methods
 module.exports = { 
     generateInterViewReportController, 
     getInterviewReportByIdController, 
-    getAllInterviewReportsController, 
-    generateResumePdfController 
+    getAllInterviewReportsController
 }

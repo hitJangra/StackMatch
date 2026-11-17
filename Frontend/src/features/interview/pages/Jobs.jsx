@@ -3,13 +3,15 @@ import React, { useState, useEffect } from 'react';
 // navigation hook
 import { useNavigate } from 'react-router';
 // ui icons
-import { Briefcase, Search, Sparkles, ArrowUpRight, MapPin, Building2, ChevronDown, SlidersHorizontal, Clock, ExternalLink } from 'lucide-react';
+import { Briefcase, Search, Sparkles, ArrowUpRight, MapPin, Building2, ChevronDown, SlidersHorizontal, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
 // api call to scrape job recommendations and manage past recommendations
 import { getRecommendedJobs, getPastRecommendations, saveLocalPastJobs, getLocalPastJobs } from '../services/interview.api';
 // helper for linkedin job urls
 import { getLinkedInJobUrl } from '../../../utils/linkedin';
 // toast alerts
 import { useToast } from '../../../components/Toast';
+import ScraperLoadingProgress from '../../../components/ScraperLoadingProgress';
+import { saveJobToKanban } from './Kanban';
 
 // shared select field component for minimalist glassmorphic dropdowns
 const FilterSelect = ({ label, value, onChange, options, icon: Icon }) => (
@@ -232,29 +234,13 @@ const Jobs = () => {
                 </button>
             </form>
 
-            {/* loading skeleton grid */}
+            {/* Premium minimalist loading indicator */}
             {loading && (
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                        <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                        <span>Scraping live listings for <strong className="text-zinc-700 dark:text-zinc-300">{location}</strong>...</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs animate-pulse space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
-                                    <div className="flex-1 space-y-1.5">
-                                        <div className="h-3.5 bg-zinc-100 dark:bg-zinc-800 rounded w-3/4" />
-                                        <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded w-1/2" />
-                                    </div>
-                                </div>
-                                <div className="h-14 bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
-                                <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <ScraperLoadingProgress 
+                    active={loading} 
+                    title={`Querying live LinkedIn indices for ${location !== 'any' ? location : 'Global market'}`}
+                    estimatedSeconds={40}
+                />
             )}
 
             {/* job listing cards — live search results */}
@@ -327,6 +313,18 @@ const Jobs = () => {
                                         <span>Apply on LinkedIn</span>
                                         <ExternalLink className="w-3.5 h-3.5" />
                                     </a>
+
+                                    <button
+                                        onClick={() => {
+                                            const added = saveJobToKanban(job);
+                                            if (added) addToast(`Added "${job.title}" to Tracker!`, "success");
+                                            else addToast(`"${job.title}" is already in your Tracker.`, "info");
+                                        }}
+                                        className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                                        title="Track this application in Tracker"
+                                    >
+                                        <BookmarkPlus className="w-3.5 h-3.5" />
+                                    </button>
 
                                     <button
                                         onClick={() => navigate('/', { state: { targetJob: job } })}
@@ -447,6 +445,18 @@ const Jobs = () => {
                                         <span>Apply on LinkedIn</span>
                                         <ExternalLink className="w-3.5 h-3.5" />
                                     </a>
+
+                                    <button
+                                        onClick={() => {
+                                            const added = saveJobToKanban(job);
+                                            if (added) addToast(`Added "${job.title}" to Tracker!`, "success");
+                                            else addToast(`"${job.title}" is already in your Tracker.`, "info");
+                                        }}
+                                        className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                                        title="Track this application in Tracker"
+                                    >
+                                        <BookmarkPlus className="w-3.5 h-3.5" />
+                                    </button>
 
                                     <button
                                         onClick={() => navigate('/', { state: { targetJob: job } })}

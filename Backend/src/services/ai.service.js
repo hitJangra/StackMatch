@@ -4,8 +4,6 @@ const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod")
 // convert zod to json schema for structured gemini output
 const { zodToJsonSchema } = require("zod-to-json-schema")
-// headless chrome for html to pdf conversion
-const puppeteer = require("puppeteer")
 
 // fallback gemini instance with default system key
 const defaultAi = new GoogleGenAI({
@@ -15,7 +13,7 @@ const defaultAi = new GoogleGenAI({
 // zod schema for interview report structure
 const interviewReportSchema = z.object({
     // match score between 0 and 100
-    matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job describe"),
+    matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job description"),
     // technical interview questions
     technicalQuestions: z.array(z.object({
         question: z.string().describe("The technical question can be asked in the interview"),
@@ -24,7 +22,7 @@ const interviewReportSchema = z.object({
     })).describe("Technical questions that can be asked in the interview along with their intention and how to answer them"),
     // behavioral interview questions
     behavioralQuestions: z.array(z.object({
-        question: z.string().describe("The technical question can be asked in the interview"),
+        question: z.string().describe("The behavioral question can be asked in the interview"),
         intention: z.string().describe("The intention of interviewer behind asking this question"),
         answer: z.string().describe("How to answer this question, what points to cover, what approach to take etc.")
     })).describe("Behavioral questions that can be asked in the interview along with their intention and how to answer them"),
@@ -146,11 +144,10 @@ async function callGroqChatCompletion({ prompt, apiKey, model, schemaDescription
 }
 
 // generate interview preparation report
-async function generateInterviewReport({ resume, selfDescription, jobDescription, customApiKey, aiProvider = 'default', aiModel }) {
-    // construct prompt string
+async function generateInterviewReport({ resume, jobDescription, customApiKey, aiProvider = 'default', aiModel }) {
+    // construct prompt string without redundant self-description
     const prompt = `Generate an interview report for a candidate with the following details:
 Resume: ${resume}
-Self Description: ${selfDescription}
 Job Description: ${jobDescription}
 `
 
@@ -247,7 +244,6 @@ ${resume}`
     // model fallback
     const selectedModel = aiModel || "gemini-2.5-flash"
 
-    // call gemini with schema
     const response = await client.models.generateContent({
         model: selectedModel,
         contents: prompt,
@@ -262,88 +258,8 @@ ${resume}`
     return parsed.recommendedJobKeywords
 }
 
-// render html string to pdf buffer using puppeteer
-async function generatePdfFromHtml(htmlContent) {
-    // launch headless browser
-    const browser = await puppeteer.launch()
-    // create new page
-    const page = await browser.newPage()
-    // load html into page and wait for resources
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" })
-
-    // render to a4 pdf buffer
-    const pdfBuffer = await page.pdf({
-        format: "A4", margin: {
-            top: "20mm",
-            bottom: "20mm",
-            left: "15mm",
-            right: "15mm"
-        }
-    })
-
-    // close browser instance
-    await browser.close()
-    // return buffer
-    return pdfBuffer
-}
-
-// generate customized resume pdf
-async function generateResumePdf({ resume, selfDescription, jobDescription, customApiKey, aiProvider = 'default', aiModel }) {
-    // schema expecting html field
-    const resumePdfSchema = z.object({
-        html: z.string().describe("The HTML content of the resume which can be converted to PDF using any library like puppeteer")
-    })
-
-    // build resume generation prompt
-    const prompt = `Generate resume for a candidate with the following details:
-Resume: ${resume}
-Self Description: ${selfDescription}
-Job Description: ${jobDescription}
-
-The response should be a JSON object with a single field "html" containing ATS-friendly HTML content formatted professionally.
-`
-
-    let jsonContent
-
-    // dispatch to appropriate ai provider
-    if (aiProvider === 'openai') {
-        jsonContent = await callOpenAiChatCompletion({
-            prompt,
-            apiKey: customApiKey,
-            model: aiModel,
-            schemaDescription: `{ "html": "string with HTML resume content" }`
-        })
-    } else if (aiProvider === 'groq') {
-        jsonContent = await callGroqChatCompletion({
-            prompt,
-            apiKey: customApiKey,
-            model: aiModel,
-            schemaDescription: `{ "html": "string with HTML resume content" }`
-        })
-    } else {
-        // gemini fallback
-        const client = customApiKey ? new GoogleGenAI({ apiKey: customApiKey }) : defaultAi
-        const selectedModel = aiModel || "gemini-2.5-flash"
-
-        const response = await client.models.generateContent({
-            model: selectedModel,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: zodToJsonSchema(resumePdfSchema),
-            }
-        })
-        jsonContent = JSON.parse(response.text)
-    }
-
-    // convert generated html to pdf binary
-    const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
-    return pdfBuffer
-}
-
 // export ai functions
 module.exports = { 
     generateInterviewReport, 
-    generateResumePdf, 
     generateJobKeywords 
 }

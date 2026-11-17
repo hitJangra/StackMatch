@@ -28,9 +28,17 @@ import Spinner from '../../../components/Spinner';
 import { useToast } from '../../../components/Toast';
 // helper for linkedin job urls
 import { getLinkedInJobUrl } from '../../../utils/linkedin';
+// Resume Keyword Heatmap component
+import ResumeKeywordHeatmap from '../components/ResumeKeywordHeatmap';
 
 // tab navigation menu items
 const NAV_ITEMS = [
+    { 
+        id: 'heatmap', 
+        label: 'Keyword Heatmap', 
+        icon: Layers,
+        countKey: 'skillGaps'
+    },
     { 
         id: 'technical', 
         label: 'Technical Questions', 
@@ -57,14 +65,11 @@ const QuestionCard = ({ item, index }) => {
     const [open, setOpen] = useState(index === 0);
 
     return (
-        // card container
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
-            {/* accordion header button */}
             <button
                 onClick={() => setOpen(prev => !prev)}
                 className="w-full text-left p-4 sm:p-5 flex items-start justify-between gap-4 cursor-pointer select-none"
             >
-                {/* question index and text */}
                 <div className="flex items-start gap-3.5 min-w-0">
                     <span className="flex-shrink-0 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 mt-0.5">
                         Q{index + 1}
@@ -73,16 +78,13 @@ const QuestionCard = ({ item, index }) => {
                         {item.question}
                     </h4>
                 </div>
-                {/* toggle arrow */}
                 <div className={`p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-transform duration-200 flex-shrink-0 ${open ? 'rotate-180' : ''}`}>
                     <ChevronDown className="w-4 h-4" />
                 </div>
             </button>
 
-            {/* accordion body */}
             {open && (
                 <div className="px-5 pb-5 pt-1 space-y-4 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in duration-200">
-                    {/* why this is asked */}
                     <div className="space-y-1.5 pt-3">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
                             Interviewer Intention
@@ -92,7 +94,6 @@ const QuestionCard = ({ item, index }) => {
                         </p>
                     </div>
 
-                    {/* model answer strategy */}
                     <div className="space-y-1.5 pt-1">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                             Model Answer Strategy
@@ -109,20 +110,13 @@ const QuestionCard = ({ item, index }) => {
 
 // full interview report detail page
 const Interview = () => {
-    // active tab
-    const [activeNav, setActiveNav] = useState('technical');
-    // report data and actions
+    const [activeNav, setActiveNav] = useState('heatmap');
     const { report, getReportById, loading, getResumePdf } = useInterview();
-    // report id from url
     const { interviewId } = useParams();
-    // navigation router
     const navigate = useNavigate();
-    // toast triggers
     const { addToast } = useToast();
-    // pdf download state
     const [downloading, setDownloading] = useState(false);
 
-    // load report on mount
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId).catch(() => {
@@ -131,12 +125,12 @@ const Interview = () => {
         }
     }, [interviewId]);
 
-    // download customized resume pdf
+    // download customized resume pdf via pure client-side @react-pdf/renderer
     const handleDownloadResume = async () => {
         try {
             setDownloading(true);
             addToast("Generating your tailored resume PDF...", "info");
-            await getResumePdf(interviewId);
+            await getResumePdf(interviewId, report);
             addToast("Resume downloaded successfully!", "success");
         } catch {
             addToast("Failed to generate resume PDF. Please try again.", "error");
@@ -145,12 +139,10 @@ const Interview = () => {
         }
     };
 
-    // show loader while fetching report
     if (loading || !report) {
         return <Spinner message="Loading your interview report..." />;
     }
 
-    // calculate score presentation styles
     const score = report.matchScore || 0;
     const scoreColor = 
         score >= 80 ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500' :
@@ -168,12 +160,10 @@ const Interview = () => {
         'Noticeable skill gaps — follow prep plan';
 
     return (
-        // report view container
         <div className="space-y-6 w-full animate-in fade-in duration-300">
             {/* page header and actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center gap-3">
-                    {/* back button */}
                     <button
                         onClick={() => navigate('/history')}
                         className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-xs cursor-pointer"
@@ -181,7 +171,6 @@ const Interview = () => {
                     >
                         <ArrowLeft className="w-4 h-4" />
                     </button>
-                    {/* title and match score badge */}
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -201,14 +190,13 @@ const Interview = () => {
                             </span>
                         </div>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            AI-evaluated interview plan, target technical questions, and personalized roadmap.
+                            AI-evaluated interview plan, ATS keyword density, questions, and personalized roadmap.
                         </p>
                     </div>
                 </div>
 
                 {/* action buttons */}
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {/* apply now button */}
                     <a
                         href={report.jobUrl || getLinkedInJobUrl(report.title || "Target Position")}
                         target="_blank"
@@ -220,7 +208,6 @@ const Interview = () => {
                         <span>Apply Now</span>
                     </a>
 
-                    {/* download resume button */}
                     <button
                         onClick={handleDownloadResume}
                         disabled={downloading}
@@ -244,7 +231,7 @@ const Interview = () => {
                         {NAV_ITEMS.map((item) => {
                             const Icon = item.icon;
                             const isActive = activeNav === item.id;
-                            const count = report[item.countKey]?.length || 0;
+                            const count = report[item.countKey]?.length || (item.id === 'heatmap' ? 'Live' : 0);
 
                             return (
                                 <button
@@ -273,8 +260,17 @@ const Interview = () => {
                     </div>
                 </div>
 
-                {/* center questions / roadmap column */}
+                {/* center questions / heatmap / roadmap column */}
                 <div className="lg:col-span-6 space-y-4">
+                    {/* Resume Keyword Heatmap Tab */}
+                    {activeNav === 'heatmap' && (
+                        <ResumeKeywordHeatmap 
+                            resumeText={report.resume}
+                            jobDescription={report.jobDescription}
+                            skillGaps={report.skillGaps}
+                        />
+                    )}
+
                     {/* technical questions tab */}
                     {activeNav === 'technical' && (
                         <div className="space-y-3">
@@ -325,11 +321,9 @@ const Interview = () => {
                                 </span>
                             </div>
 
-                            {/* day by day timeline */}
                             <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-zinc-200 dark:before:bg-zinc-800">
                                 {report.preparationPlan?.map((day) => (
                                     <div key={day.day} className="relative space-y-2">
-                                        {/* milestone dot */}
                                         <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-indigo-600 bg-white dark:bg-zinc-900" />
                                         
                                         <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-2">
@@ -342,7 +336,6 @@ const Interview = () => {
                                                 </h4>
                                             </div>
 
-                                            {/* tasks for the day */}
                                             <ul className="space-y-1.5 pt-1">
                                                 {day.tasks?.map((task, idx) => (
                                                     <li key={idx} className="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-300">
@@ -420,5 +413,4 @@ const Interview = () => {
     );
 };
 
-// export interview detail page
 export default Interview;

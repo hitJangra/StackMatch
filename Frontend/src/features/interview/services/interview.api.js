@@ -1,10 +1,12 @@
 // axios http client
 import axios from "axios";
+import { downloadClientResumePdf } from "../components/ResumePdfDocument";
 
-// create api client with cookie support
+// create api client with cookie support and 100s timeout for scraper operations
 const api = axios.create({
     baseURL: "http://localhost:3000",
     withCredentials: true,
+    timeout: 100000, // 100s timeout to accommodate external Apify scraper runs safely
 });
 
 // localstorage key for byok settings
@@ -53,23 +55,14 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// direct browser-to-openai api call
-async function generateViaOpenAI({ jobDescription, selfDescription, resumeFile, byokConfig }) {
-    // validate key
-    const apiKey = byokConfig.apiKey;
-    if (!apiKey) {
-        throw new Error("OpenAI API Key is missing. Please configure your key in Settings.");
-    }
+// direct browser-to-local-ollama api call (strictly client-side since AWS backend cannot reach localhost)
+async function generateViaOllama({ jobDescription, resumeFile, byokConfig }) {
+    const endpoint = byokConfig.endpoint || "http://localhost:11434";
+    const model = byokConfig.model || "llama3";
 
-    // pick model
-    const model = byokConfig.model || "gpt-4o-mini";
-
-    // build scoring prompt
+    // build structured prompt
     const prompt = `You are an elite technical interviewer, hiring manager, and talent strategist.
-Analyze the candidate's profile and target job description:
-
-Candidate Profile / Summary:
-${selfDescription || "Senior Full Stack Software Engineer with production experience"}
+Analyze the target job description and profile:
 
 Target Job Description:
 ${jobDescription || "Full Stack Software Engineer"}
@@ -99,107 +92,6 @@ Use this exact JSON schema:
   ]
 }`;
 
-    // post to openai completions endpoint
-    const response = await axios.post("https://api.openai.com/v1/chat/completions", {
-        model,
-        messages: [
-            {
-                role: "system",
-                content: "You are an AI interview screener and talent coach. You must strictly output valid JSON matching the requested schema."
-            },
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.3
-    }, {
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
-        }
-    });
-
-    // extract response text
-    const content = response.data?.choices?.[0]?.message?.content;
-    if (!content) {
-        throw new Error("Empty response received from OpenAI API.");
-    }
-
-    // parse json safely
-    let parsed;
-    try {
-        parsed = JSON.parse(content);
-    } catch {
-        const cleaned = content.replace(/```json/g, "").replace(/```/g, "").trim();
-        parsed = JSON.parse(cleaned);
-    }
-
-    // build report object
-    const localReport = {
-        _id: "local-openai-" + Date.now(),
-        title: parsed.title || "Target Position (OpenAI)",
-        createdAt: new Date().toISOString(),
-        matchScore: typeof parsed.matchScore === "number" ? parsed.matchScore : 85,
-        jobDescription: jobDescription || "",
-        selfDescription: selfDescription || "",
-        technicalQuestions: Array.isArray(parsed.technicalQuestions) ? parsed.technicalQuestions : [],
-        behavioralQuestions: Array.isArray(parsed.behavioralQuestions) ? parsed.behavioralQuestions : [],
-        skillGaps: Array.isArray(parsed.skillGaps) ? parsed.skillGaps : [],
-        preparationPlan: Array.isArray(parsed.preparationPlan) ? parsed.preparationPlan : []
-    };
-
-    // save locally in browser storage
-    localStorage.setItem("local_report_" + localReport._id, JSON.stringify(localReport));
-
-    return {
-        message: "Interview report generated via OpenAI.",
-        interviewReport: localReport
-    };
-}
-
-// direct local ollama api call
-async function generateViaOllama({ jobDescription, selfDescription, resumeFile, byokConfig }) {
-    // get ollama host and model
-    const endpoint = (byokConfig.endpoint || "http://localhost:11434").replace(/\/$/, "");
-    const model = byokConfig.model || "llama3";
-
-    // build prompt
-    const prompt = `You are an expert technical recruiter and interview strategist.
-Analyze the candidate's profile and target job description:
-
-Candidate Profile/Summary:
-${selfDescription || "Experienced Software Engineer with full-stack background"}
-
-Target Job Description:
-${jobDescription || "Full Stack Software Developer"}
-
-You MUST output ONLY a valid JSON object with NO markdown formatting, NO backticks, and NO conversational text.
-Use this exact JSON structure:
-{
-  "title": "Target Role Title",
-  "matchScore": 85,
-  "technicalQuestions": [
-    { "question": "Detailed technical question 1", "intention": "Why interviewer asks this", "answer": "Structured answer approach" },
-    { "question": "Detailed technical question 2", "intention": "Why interviewer asks this", "answer": "Structured answer approach" },
-    { "question": "Detailed technical question 3", "intention": "Why interviewer asks this", "answer": "Structured answer approach" }
-  ],
-  "behavioralQuestions": [
-    { "question": "Behavioral question 1", "intention": "Culture and collaboration check", "answer": "STAR method response strategy" },
-    { "question": "Behavioral question 2", "intention": "Conflict or leadership check", "answer": "STAR method response strategy" }
-  ],
-  "skillGaps": [
-    { "skill": "Core relevant skill gap", "severity": "medium" },
-    { "skill": "Secondary skill gap", "severity": "low" }
-  ],
-  "preparationPlan": [
-    { "day": 1, "focus": "Core Domain Fundamentals", "tasks": ["Review primary algorithms and patterns", "Implement key reference modules"] },
-    { "day": 2, "focus": "System Design & Architecture", "tasks": ["Study scalable distributed patterns", "Practice whiteboard architecture"] },
-    { "day": 3, "focus": "Mock Behavioral & Case Prep", "tasks": ["Rehearse past project stories using STAR", "Review company values"] }
-  ]
-}`;
-
     // post to local ollama endpoint
     const ollamaResponse = await axios.post(`${endpoint}/api/generate`, {
         model,
@@ -208,12 +100,10 @@ Use this exact JSON structure:
         stream: false
     });
 
-    // validate returned body
     if (!ollamaResponse.data || !ollamaResponse.data.response) {
         throw new Error("Ollama returned an empty response. Verify model is installed via 'ollama pull " + model + "'");
     }
 
-    // parse json
     let parsed;
     try {
         parsed = JSON.parse(ollamaResponse.data.response);
@@ -222,21 +112,18 @@ Use this exact JSON structure:
         parsed = JSON.parse(cleaned);
     }
 
-    // format local report
     const localReport = {
         _id: "local-ollama-" + Date.now(),
         title: parsed.title || "Target Position (Local AI)",
         createdAt: new Date().toISOString(),
         matchScore: typeof parsed.matchScore === "number" ? parsed.matchScore : 80,
         jobDescription: jobDescription || "",
-        selfDescription: selfDescription || "",
         technicalQuestions: Array.isArray(parsed.technicalQuestions) ? parsed.technicalQuestions : [],
         behavioralQuestions: Array.isArray(parsed.behavioralQuestions) ? parsed.behavioralQuestions : [],
         skillGaps: Array.isArray(parsed.skillGaps) ? parsed.skillGaps : [],
         preparationPlan: Array.isArray(parsed.preparationPlan) ? parsed.preparationPlan : []
     };
 
-    // store in browser
     localStorage.setItem("local_report_" + localReport._id, JSON.stringify(localReport));
 
     return {
@@ -246,37 +133,27 @@ Use this exact JSON structure:
 }
 
 // generate interview report based on active byok provider
-export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+export const generateInterviewReport = async ({ jobDescription, resumeFile }) => {
     // read byok configuration
     const byok = getStoredByokConfig();
 
-    // route to openai client-side if selected
-    if (byok && byok.provider === "openai") {
-        return await generateViaOpenAI({
-            jobDescription,
-            selfDescription,
-            resumeFile,
-            byokConfig: byok
-        });
-    }
-
-    // route to ollama local client-side if selected
+    // route to ollama local client-side ONLY if selected
     if (byok && byok.provider === "ollama") {
         return await generateViaOllama({
             jobDescription,
-            selfDescription,
             resumeFile,
             byokConfig: byok
         });
     }
 
-    // forward to backend for groq, gemini or default
+    // Unified AI Architecture: OpenAI, Gemini, Groq, and default all route through Node.js backend
     const formData = new FormData();
     formData.append("jobDescription", jobDescription);
-    formData.append("selfDescription", selfDescription);
-    formData.append("resume", resumeFile);
+    if (resumeFile) {
+        formData.append("resume", resumeFile);
+    }
 
-    // send multipart form data
+    // send multipart form data to unified backend
     const response = await api.post("/api/interview/", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
@@ -307,25 +184,23 @@ export const getAllInterviewReports = async () => {
     return response.data;
 };
 
-// download resume pdf
-export const generateResumePdf = async ({ interviewReportId }) => {
-    // request pdf blob
-    const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
-        responseType: "blob"
-    });
-
-    return response.data;
+// download resume pdf via pure client-side @react-pdf/renderer
+export const generateResumePdf = async ({ interviewReportId, reportData }) => {
+    let report = reportData;
+    if (!report && interviewReportId) {
+        const res = await getInterviewReportById(interviewReportId);
+        report = res?.interviewReport;
+    }
+    return await downloadClientResumePdf(report);
 };
 
 // request job recommendations by keywords and optional filters
 export const getRecommendedJobs = async (keywords, filters = {}) => {
-    // build query string from non-empty filter values
     const params = new URLSearchParams();
     if (filters.location && filters.location !== 'any') params.append('location', filters.location);
     if (filters.experience && filters.experience !== 'any') params.append('exp', filters.experience);
     if (filters.type && filters.type !== 'any') params.append('type', filters.type);
 
-    // post keywords array; send filters as query params
     const queryString = params.toString();
     const url = queryString ? `/api/jobs/recommend?${queryString}` : '/api/jobs/recommend';
     const response = await api.post(url, { keywords });
@@ -334,7 +209,6 @@ export const getRecommendedJobs = async (keywords, filters = {}) => {
 
 // fetch scan history list
 export const getHistory = async () => {
-    // query history endpoint
     const response = await api.get("/api/history");
     return response.data;
 };

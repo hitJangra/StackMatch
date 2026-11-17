@@ -15,7 +15,8 @@ import {
     Plus, 
     FileText,
     ArrowUpRight,
-    User
+    User,
+    Columns3
 } from 'lucide-react';
 // auth and theme custom hooks
 import { useAuth } from '../features/auth/hooks/useAuth';
@@ -25,6 +26,7 @@ import { useTheme } from '../features/theme/theme.context';
 const navItems = [
     { label: 'Home', path: '/', icon: Home, description: 'Analyze & Match' },
     { label: 'Jobs', path: '/jobs', icon: Briefcase, description: 'AI Recommender' },
+    { label: 'Tracker', path: '/kanban', icon: Columns3, description: 'Application Pipeline' },
     { label: 'History', path: '/history', icon: History, description: 'Past Analyses' },
     { label: 'Settings', path: '/settings', icon: Settings, description: 'Preferences' }
 ];
@@ -45,6 +47,8 @@ const Layout = () => {
         pageTitle = 'Home';
     } else if (location.pathname.startsWith('/interview')) {
         pageTitle = 'Interview Report';
+    } else if (location.pathname.startsWith('/kanban')) {
+        pageTitle = 'Application Tracker';
     } else if (location.pathname.startsWith('/history')) {
         pageTitle = 'Scan History';
     } else if (location.pathname.startsWith('/jobs')) {

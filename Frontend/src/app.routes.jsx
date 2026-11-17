@@ -10,6 +10,7 @@ import Layout from "./components/Layout";
 // feature pages
 import Home from "./features/interview/pages/Home";
 import Jobs from "./features/interview/pages/Jobs";
+import Kanban from "./features/interview/pages/Kanban";
 import History from "./features/interview/pages/History";
 import Settings from "./features/interview/pages/Settings";
 import Interview from "./features/interview/pages/Interview";
@@ -48,6 +49,11 @@ export const router = createBrowserRouter([
             {
                 path: "jobs",
                 element: <Jobs />
+            },
+            // application pipeline kanban board
+            {
+                path: "kanban",
+                element: <Kanban />
             },
             // user scan history
             {

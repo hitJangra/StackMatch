@@ -19,20 +19,16 @@ export const useInterview = () => {
     const { loading, setLoading, report, setReport, reports, setReports } = context
 
     // scan resume and generate full interview prep report
-    const generateReport = async ({ jobDescription, selfDescription, resumeFile }) => {
-        // start loading spinner
+    const generateReport = async ({ jobDescription, resumeFile }) => {
         setLoading(true)
         try {
-            // call backend api
-            const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
-            // save report in context
+            const response = await generateInterviewReport({ jobDescription, resumeFile })
             setReport(response.interviewReport)
             return response.interviewReport
         } catch (error) {
             console.error("generateReport error:", error)
             throw error
         } finally {
-            // stop spinner
             setLoading(false)
         }
     }
@@ -41,9 +37,7 @@ export const useInterview = () => {
     const getReportById = async (interviewId) => {
         setLoading(true)
         try {
-            // query report endpoint
             const response = await getInterviewReportById(interviewId)
-            // set active report
             setReport(response.interviewReport)
             return response.interviewReport
         } catch (error) {
@@ -58,9 +52,7 @@ export const useInterview = () => {
     const getReports = async () => {
         setLoading(true)
         try {
-            // get list of reports
             const response = await getAllInterviewReports()
-            // store reports array
             setReports(response.interviewReports)
             return response.interviewReports
         } catch (error) {
@@ -71,24 +63,14 @@ export const useInterview = () => {
         }
     }
 
-    // download tailored resume pdf
-    const getResumePdf = async (interviewReportId) => {
+    // download tailored resume pdf via client-side @react-pdf/renderer
+    const getResumePdf = async (interviewReportId, reportData) => {
         setLoading(true)
         try {
-            // fetch binary pdf stream from api
-            const response = await generateResumePdf({ interviewReportId })
-            // create blob url
-            const url = window.URL.createObjectURL(new Blob([ response ], { type: "application/pdf" }))
-            // create temporary download link
-            const link = document.createElement("a")
-            link.href = url
-            link.setAttribute("download", `resume_${interviewReportId}.pdf`)
-            document.body.appendChild(link)
-            // trigger browser download
-            link.click()
-            // clean up dom and blob url
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
+            await generateResumePdf({ 
+                interviewReportId, 
+                reportData: reportData || report 
+            })
         } catch (error) {
             console.error("getResumePdf error:", error)
             throw error
@@ -97,6 +79,13 @@ export const useInterview = () => {
         }
     }
 
-    // return state and methods
-    return { loading, report, reports, generateReport, getReportById, getReports, getResumePdf }
+    return {
+        loading,
+        report,
+        reports,
+        generateReport,
+        getReportById,
+        getReports,
+        getResumePdf
+    }
 }

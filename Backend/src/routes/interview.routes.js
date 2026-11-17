@@ -19,8 +19,5 @@ interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewCo
 // get list of all interview reports for current user
 interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
 
-// generate customized resume pdf based on interview report
-interviewRouter.post("/resume/pdf/:interviewReportId", authMiddleware.authUser, interviewController.generateResumePdfController)
-
 // export interview router
 module.exports = interviewRouter

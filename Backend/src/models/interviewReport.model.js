@@ -93,10 +93,6 @@ const interviewReportSchema = new mongoose.Schema({
     resume: {
         type: String,
     },
-    // optional candidate self-intro
-    selfDescription: {
-        type: String,
-    },
     // ats match percentage (0-100)
     matchScore: {
         type: Number,
