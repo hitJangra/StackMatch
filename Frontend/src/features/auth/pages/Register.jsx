@@ -8,8 +8,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../../theme/theme.context';
 // toast notifications hook
 import { useToast } from '../../../components/Toast';
-// spinner loader
-import Spinner from '../../../components/Spinner';
 // icons
 import { 
     User, 
@@ -28,8 +26,9 @@ import {
 const Register = () => {
     // router navigation
     const navigate = useNavigate();
-    // auth state and register action
-    const { loading, handleRegister } = useAuth();
+    // auth state and register action (do NOT use `loading` for a full-page spinner —
+    // that would unmount the form mid-submit; use local `submitting` state instead)
+    const { handleRegister } = useAuth();
     // dark/light theme state
     const { theme, toggleTheme } = useTheme();
     // toast triggers
@@ -80,11 +79,6 @@ const Register = () => {
             addToast(result?.message || "Registration failed. Please try again.", "error");
         }
     };
-
-    // show loader while checking session
-    if (loading) {
-        return <Spinner message="Checking session..." />;
-    }
 
     return (
         // registration page container

@@ -26,6 +26,8 @@ import Spinner from '../../../components/Spinner';
 import { useToast } from '../../../components/Toast';
 // api call to fetch recommended jobs and persist them
 import { getRecommendedJobs, saveLocalPastJobs } from '../services/interview.api.js';
+// shared axios client for direct api calls
+import { api } from '../../../lib/axios';
 // helper for linkedin job urls
 import { getLinkedInJobUrl } from '../../../utils/linkedin.js';
 // minimalist scraper progress loading UI
@@ -123,10 +125,7 @@ const Home = () => {
             const formData = new FormData();
             formData.append("resume", resumeFile);
 
-            const { default: axios } = await import("axios");
-            const api = axios.create({ baseURL: "http://localhost:3000", withCredentials: true, timeout: 100000 });
-
-            // request keywords extraction
+            // request keywords extraction via shared api client (no dynamic import needed)
             const { data: keywordData } = await api.post("/api/interview/", formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });

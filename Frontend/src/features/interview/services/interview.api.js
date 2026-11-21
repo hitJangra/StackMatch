@@ -1,13 +1,7 @@
-// axios http client
-import axios from "axios";
+// shared axios client (reads VITE_API_BASE_URL, withCredentials, 100s timeout)
+import { api } from "../../../lib/axios";
+import axios from "axios"; // kept only for the direct Ollama localhost call below
 import { downloadClientResumePdf } from "../components/ResumePdfDocument";
-
-// create api client with cookie support and 100s timeout for scraper operations
-const api = axios.create({
-    baseURL: "http://localhost:3000",
-    withCredentials: true,
-    timeout: 100000, // 100s timeout to accommodate external Apify scraper runs safely
-});
 
 // localstorage key for byok settings
 export const BYOK_STORAGE_KEY = "byok_ai_config";

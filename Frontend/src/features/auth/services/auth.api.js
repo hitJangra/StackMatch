@@ -1,11 +1,5 @@
-// axios http client
-import axios from "axios"
-
-// create axios instance with backend url and cookie support
-const api = axios.create({
-    baseURL: "http://localhost:3000",
-    withCredentials: true // send cookies with requests
-})
+// shared axios client (reads VITE_API_BASE_URL, withCredentials, 100s timeout)
+import { api } from "../../../lib/axios";
 
 // register a new account
 export async function register({ username, email, password }) {

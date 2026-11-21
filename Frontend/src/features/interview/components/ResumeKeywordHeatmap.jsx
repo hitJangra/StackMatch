@@ -79,10 +79,15 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
             const isExplicitGap = gapSkills.has(term);
             const inResume = !isExplicitGap && res.length > 0 ? res.includes(term) : !isExplicitGap;
             
-            // Count approximate occurrences in JD
-            const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-            const jdMatches = (jd.match(regex) || []).length;
-            const resMatches = inResume ? (res.match(regex) || []).length : 0;
+            // Count approximate occurrences using boundary-safe regex.
+            // \b fails for terms containing non-word chars (C++, C#, Node.js etc.) because
+            // \b asserts between \w and \W — the special chars break the boundary assertion.
+            // Instead, use alphanumeric-only lookahead/lookbehind so the pattern correctly
+            // matches these tokens regardless of surrounding punctuation.
+            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const safePattern = new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'gi');
+            const jdMatches = (jd.match(safePattern) || []).length;
+            const resMatches = inResume ? (res.match(safePattern) || []).length : 0;
 
             const severity = gapSkills.get(term) || (isExplicitGap ? "high" : "low");
 
