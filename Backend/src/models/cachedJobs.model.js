@@ -37,7 +37,15 @@ const cachedJobItemSchema = new mongoose.Schema(
 // schema to cache apify scraper results with filter-aware query keys
 const cachedJobsSchema = new mongoose.Schema(
     {
-        // reference to the user who requested the recommendation
+        // references to users who requested or received this recommendation
+        users: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "users",
+                index: true
+            }
+        ],
+        // legacy single user reference (kept for backward compatibility)
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "users",

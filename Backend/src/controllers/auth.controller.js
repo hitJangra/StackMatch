@@ -20,6 +20,21 @@ async function registerUserController(req, res, next) {
             })
         }
 
+        // validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email.trim())) {
+            return res.status(400).json({
+                message: "Please provide a valid email address"
+            })
+        }
+
+        // validate minimum password length
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters long"
+            })
+        }
+
         // check if username or email is already taken
         const isUserAlreadyExists = await userModel.findOne({
             $or: [ { username }, { email } ]

@@ -50,9 +50,17 @@ app.use("/api", resumeRouter) // resume builder and pdf generator routes
 app.use((err, req, res, next) => {
     // log error trace for debugging
     console.error(err.stack)
+    const statusCode = err.status || 500
+    const isProd = process.env.NODE_ENV === "production"
+
+    // in production, hide internal 500 server error details to prevent data leakage
+    const message = (isProd && statusCode >= 500)
+        ? "Internal Server Error"
+        : (err.message || "Internal Server Error")
+
     // send error status and message back to client
-    res.status(err.status || 500).json({
-        message: err.message || "Internal Server Error"
+    res.status(statusCode).json({
+        message
     })
 })
 

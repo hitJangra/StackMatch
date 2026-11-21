@@ -1,3 +1,5 @@
+// react lazy and suspense for route-level code splitting
+import React, { lazy, Suspense } from "react";
 // react-router browser router helper
 import { createBrowserRouter } from "react-router";
 // auth pages
@@ -7,15 +9,26 @@ import Register from "./features/auth/pages/Register";
 import Protected from "./features/auth/components/Protected";
 // main shell layout (sidebar + header)
 import Layout from "./components/Layout";
-// feature pages
+// home landing page (kept eager for immediate first paint)
 import Home from "./features/interview/pages/Home";
-import Jobs from "./features/interview/pages/Jobs";
-import Kanban from "./features/interview/pages/Kanban";
-import History from "./features/interview/pages/History";
-import Settings from "./features/interview/pages/Settings";
-import Interview from "./features/interview/pages/Interview";
 // 404 page
 import NotFound from "./components/NotFound";
+// loading spinner fallback for lazy chunks
+import Spinner from "./components/Spinner";
+
+// lazy-loaded feature routes to split heavy dependencies (e.g. @react-pdf/renderer)
+const Jobs = lazy(() => import("./features/interview/pages/Jobs"));
+const Kanban = lazy(() => import("./features/interview/pages/Kanban"));
+const History = lazy(() => import("./features/interview/pages/History"));
+const Settings = lazy(() => import("./features/interview/pages/Settings"));
+const Interview = lazy(() => import("./features/interview/pages/Interview"));
+
+// helper wrapper to render lazy components with suspense fallback
+const withSuspense = (Component, message) => (
+    <Suspense fallback={<Spinner message={message || "Loading..."} />}>
+        <Component />
+    </Suspense>
+);
 
 // define browser routing table
 export const router = createBrowserRouter([
@@ -45,30 +58,30 @@ export const router = createBrowserRouter([
                 index: true,
                 element: <Home />
             },
-            // job board recommendation feed
+            // job board recommendation feed (code-split)
             {
                 path: "jobs",
-                element: <Jobs />
+                element: withSuspense(Jobs, "Loading jobs pipeline...")
             },
-            // application pipeline kanban board
+            // application pipeline kanban board (code-split)
             {
                 path: "kanban",
-                element: <Kanban />
+                element: withSuspense(Kanban, "Loading application tracker...")
             },
-            // user scan history
+            // user scan history (code-split)
             {
                 path: "history",
-                element: <History />
+                element: withSuspense(History, "Loading scan history...")
             },
-            // user settings and api keys
+            // user settings and api keys (code-split)
             {
                 path: "settings",
-                element: <Settings />
+                element: withSuspense(Settings, "Loading settings...")
             },
-            // specific interview prep report view
+            // specific interview prep report view (code-split: isolates @react-pdf)
             {
                 path: "interview/:interviewId",
-                element: <Interview />
+                element: withSuspense(Interview, "Loading interview report...")
             }
         ]
     },

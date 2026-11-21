@@ -28,7 +28,7 @@ const behavioralQuestionSchema = new mongoose.Schema({
     // question text
     question: {
         type: String,
-        required: [ true, "Technical question is required" ]
+        required: [ true, "Behavioral question is required" ]
     },
     // reason for asking
     intention: {
@@ -118,6 +118,9 @@ const interviewReportSchema = new mongoose.Schema({
     // include createdAt and updatedAt
     timestamps: true
 })
+
+// compound index for high-performance user history querying and sorting
+interviewReportSchema.index({ user: 1, createdAt: -1 });
 
 // compile interview report model
 const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);

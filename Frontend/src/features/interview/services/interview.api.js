@@ -1,7 +1,6 @@
 // shared axios client (reads VITE_API_BASE_URL, withCredentials, 100s timeout)
 import { api } from "../../../lib/axios";
 import axios from "axios"; // kept only for the direct Ollama localhost call below
-import { downloadClientResumePdf } from "../components/ResumePdfDocument";
 
 // localstorage key for byok settings
 export const BYOK_STORAGE_KEY = "byok_ai_config";
@@ -178,13 +177,14 @@ export const getAllInterviewReports = async () => {
     return response.data;
 };
 
-// download resume pdf via pure client-side @react-pdf/renderer
+// download resume pdf via pure client-side @react-pdf/renderer (dynamically loaded on demand)
 export const generateResumePdf = async ({ interviewReportId, reportData }) => {
     let report = reportData;
     if (!report && interviewReportId) {
         const res = await getInterviewReportById(interviewReportId);
         report = res?.interviewReport;
     }
+    const { downloadClientResumePdf } = await import("../components/ResumePdfDocument");
     return await downloadClientResumePdf(report);
 };
 

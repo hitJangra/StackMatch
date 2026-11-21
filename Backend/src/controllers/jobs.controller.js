@@ -133,6 +133,19 @@ async function recommendJobsController(req, res, next) {
         const cachedEntry = await CachedJobs.findOne({ queryKey })
         if (cachedEntry && cachedEntry.jobs && cachedEntry.jobs.length > 0) {
             console.log(`[jobs/recommend] Cache HIT for queryKey="${queryKey}"`)
+            // associate current user with cached results so it appears in their past recommendations
+            const userId = req.user?.id || req.user?._id;
+            if (userId) {
+                try {
+                    await CachedJobs.updateOne(
+                        { _id: cachedEntry._id },
+                        { $addToSet: { users: userId } }
+                    );
+                } catch (updateErr) {
+                    console.error("[jobs/recommend] Failed to associate user with cached entry:", updateErr.message);
+                }
+            }
+
             return res.status(200).json({
                 message: "Job recommendations fetched successfully.",
                 jobs: cachedEntry.jobs,
@@ -199,13 +212,17 @@ async function recommendJobsController(req, res, next) {
                 await CachedJobs.findOneAndUpdate(
                     { queryKey },
                     {
-                        ...(userId ? { user: userId } : {}),
-                        queryKey,
-                        cacheKey,
-                        keywords: safeKeywords,
-                        filters,
-                        jobs,
-                        createdAt: new Date()
+                        $setOnInsert: {
+                            queryKey,
+                            cacheKey,
+                            keywords: safeKeywords,
+                            filters,
+                            createdAt: new Date()
+                        },
+                        $set: {
+                            jobs
+                        },
+                        ...(userId ? { $addToSet: { users: userId } } : {})
                     },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 )
@@ -234,10 +251,15 @@ async function getPastRecommendationsController(req, res, next) {
     try {
         const userId = req.user?.id || req.user?._id;
 
-        // Query cached entries strictly belonging to the authenticated user
+        // Query cached entries strictly belonging to the authenticated user (array or legacy field)
         let entries = [];
         if (userId) {
-            entries = await CachedJobs.find({ user: userId }).sort({ createdAt: -1 }).limit(30);
+            entries = await CachedJobs.find({
+                $or: [
+                    { users: userId },
+                    { user: userId }
+                ]
+            }).sort({ createdAt: -1 }).limit(30);
         }
 
         const seen = new Set();
