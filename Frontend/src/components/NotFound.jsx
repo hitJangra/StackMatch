@@ -20,7 +20,10 @@ const NotFound = () => {
             {/* helper message */}
             <p className='notfound__sub'>The page you're looking for doesn't exist or has been moved.</p>
             {/* redirect back to dashboard */}
-            <button className='button primary-button' onClick={() => navigate('/')}>
+            <button 
+                className="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition-all cursor-pointer shadow-sm tracking-wide" 
+                onClick={() => navigate('/')}
+            >
                 Go Home
             </button>
         </main>

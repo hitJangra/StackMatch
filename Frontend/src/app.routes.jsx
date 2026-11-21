@@ -5,7 +5,7 @@ import Login from "./features/auth/pages/Login";
 import Register from "./features/auth/pages/Register";
 // protected route wrapper
 import Protected from "./features/auth/components/Protected";
-// main shell layout with navbar
+// main shell layout (sidebar + header)
 import Layout from "./components/Layout";
 // feature pages
 import Home from "./features/interview/pages/Home";
@@ -35,7 +35,7 @@ export const router = createBrowserRouter([
         element: (
             // guard against unauthenticated visits
             <Protected>
-                {/* shared navbar + content layout */}
+                {/* protected layout shell */}
                 <Layout />
             </Protected>
         ),

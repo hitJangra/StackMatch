@@ -4,10 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Sparkles, 
     KeyRound, 
-    Zap, 
-    HardDrive, 
     CheckCircle2, 
-    AlertCircle, 
     Eye, 
     EyeOff, 
     ExternalLink, 
@@ -18,7 +15,6 @@ import {
     Moon, 
     Sun,
     Server,
-    ShieldCheck,
     Lock,
     Key
 } from 'lucide-react';
@@ -56,11 +52,11 @@ const GEMINI_MODELS = [
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Legacy)' }
 ];
 
-// groq model choices
+// groq model choices — current Llama-3 lineup (Mixtral removed: deprecated on Groq)
 const GROQ_MODELS = [
     { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile (Recommended)' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (Fast)' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B 32k' }
+    { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B Versatile' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (Fast)' }
 ];
 
 // settings view for api keys, theme, and password
@@ -88,14 +84,6 @@ const Settings = () => {
     const [showNewPass, setShowNewPass] = useState(false);
     const [showConfirmPass, setShowConfirmPass] = useState(false);
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-    // monthly scan usage tracker simulation
-    const usedScans = 3;
-    const totalScans = 10;
-    const scansPercentage = Math.round((usedScans / totalScans) * 100);
-    const circleRadius = 38;
-    const circumference = 2 * Math.PI * circleRadius;
-    const strokeDashoffset = circumference - (circumference * scansPercentage) / 100;
 
     // load saved settings from storage
     useEffect(() => {
@@ -281,61 +269,6 @@ const Settings = () => {
                             {selectedProvider === 'ollama' && '100% private, on-device generation running locally on your hardware.'}
                         </p>
                     </div>
-
-                    {/* default free tier meter */}
-                    {selectedProvider === 'default' && (
-                        <div className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 flex flex-col sm:flex-row items-center gap-6">
-                            {/* circular progress svg */}
-                            <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-                                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 96 96">
-                                    <circle
-                                        cx="48"
-                                        cy="48"
-                                        r={circleRadius}
-                                        stroke="currentColor"
-                                        strokeWidth="8"
-                                        className="text-zinc-200 dark:text-zinc-800"
-                                        fill="transparent"
-                                    />
-                                    <circle
-                                        cx="48"
-                                        cy="48"
-                                        r={circleRadius}
-                                        stroke="currentColor"
-                                        strokeWidth="8"
-                                        strokeDasharray={circumference}
-                                        strokeDashoffset={strokeDashoffset}
-                                        strokeLinecap="round"
-                                        className="text-indigo-600 dark:text-indigo-500 transition-all duration-700 ease-out"
-                                        fill="transparent"
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-                                        {usedScans}/{totalScans}
-                                    </span>
-                                    <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-semibold">
-                                        Used
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* quota explanation */}
-                            <div className="space-y-1.5 text-center sm:text-left">
-                                <div className="flex items-center justify-center sm:justify-start gap-2">
-                                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                                        Free Tier Monthly Allowance
-                                    </span>
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                        Active
-                                    </span>
-                                </div>
-                                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                    You have utilized <strong className="font-semibold text-zinc-900 dark:text-zinc-200">{usedScans} of {totalScans} free scans</strong> for this billing cycle. To lift scan limits or customize reasoning models, switch to your own OpenAI, Gemini, or Groq API key above.
-                                </p>
-                            </div>
-                        </div>
-                    )}
 
                     {/* openai api key input */}
                     {selectedProvider === 'openai' && (
