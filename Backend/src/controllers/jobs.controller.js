@@ -234,13 +234,10 @@ async function getPastRecommendationsController(req, res, next) {
     try {
         const userId = req.user?.id || req.user?._id;
 
-        // Query cached entries belonging to this user, or fallback to all recent entries
+        // Query cached entries strictly belonging to the authenticated user
         let entries = [];
         if (userId) {
             entries = await CachedJobs.find({ user: userId }).sort({ createdAt: -1 }).limit(30);
-        }
-        if (!entries || entries.length === 0) {
-            entries = await CachedJobs.find().sort({ createdAt: -1 }).limit(15);
         }
 
         const seen = new Set();

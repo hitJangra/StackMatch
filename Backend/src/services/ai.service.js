@@ -10,6 +10,21 @@ const defaultAi = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+// sanitize raw LLM text by stripping markdown code fences (e.g. ```json ... ```)
+function parseAiJson(rawText) {
+    if (!rawText || typeof rawText !== "string") {
+        throw new Error("Invalid or empty response received from AI model.")
+    }
+    // strip leading/trailing ```json, ```JSON, or generic ``` markdown code fences
+    const cleaned = rawText
+        .trim()
+        .replace(/^```(?:json|JSON)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim()
+
+    return JSON.parse(cleaned)
+}
+
 // zod schema for interview report structure
 const interviewReportSchema = z.object({
     // match score between 0 and 100
@@ -92,10 +107,10 @@ async function callOpenAiChatCompletion({ prompt, apiKey, model, schemaDescripti
         throw new Error(`OpenAI API Error (${response.status}): ${errBody}`)
     }
 
-    // parse json result
+    // parse json result with code-fence sanitization
     const data = await response.json()
     const content = data.choices[0]?.message?.content
-    return JSON.parse(content)
+    return parseAiJson(content)
 }
 
 // helper to query groq completions api
@@ -137,10 +152,10 @@ async function callGroqChatCompletion({ prompt, apiKey, model, schemaDescription
         throw new Error(`Groq API Error (${response.status}): ${errBody}`)
     }
 
-    // parse returned json
+    // parse returned json with code-fence sanitization
     const data = await response.json()
     const content = data.choices[0]?.message?.content
-    return JSON.parse(content)
+    return parseAiJson(content)
 }
 
 // generate interview preparation report
@@ -200,8 +215,8 @@ Job Description: ${jobDescription}
         }
     })
 
-    // parse and return json
-    return JSON.parse(response.text)
+    // parse and return json with code-fence sanitization
+    return parseAiJson(response.text)
 }
 
 // analyze resume and extract 3 targeted job keywords
@@ -253,8 +268,8 @@ ${resume}`
         }
     })
 
-    // extract and return keywords array
-    const parsed = JSON.parse(response.text)
+    // extract and return keywords array with code-fence sanitization
+    const parsed = parseAiJson(response.text)
     return parsed.recommendedJobKeywords
 }
 
