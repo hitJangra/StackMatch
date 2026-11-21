@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./Backend
+    container_name: stackmatch-backend
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+
+  frontend:
+    build: ./Frontend
+    container_name: stackmatch-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
