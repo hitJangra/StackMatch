@@ -54,7 +54,10 @@ export const useAuth = () => {
             return { success: false, message: data?.message || "Login failed" }
         } catch (err) {
             // extract error message from response
-            const message = err?.response?.data?.message || "Login failed"
+            const status = err?.response?.status
+            const message = status === 429
+                ? "Too many login attempts. Please try again after 15 minutes."
+                : err?.response?.data?.message || "Login failed"
             return { success: false, message }
         } finally {
             setLoading(false)
@@ -76,7 +79,10 @@ export const useAuth = () => {
             return { success: false, message: data?.message || "Registration failed" }
         } catch (err) {
             // extract error message
-            const message = err?.response?.data?.message || "Registration failed"
+            const status = err?.response?.status
+            const message = status === 429
+                ? "Too many registration attempts. Please try again later."
+                : err?.response?.data?.message || "Registration failed"
             return { success: false, message }
         } finally {
             setLoading(false)

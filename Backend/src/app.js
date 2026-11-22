@@ -4,9 +4,15 @@ const express = require("express")
 const cookieParser = require("cookie-parser")
 // enable cross-origin requests
 const cors = require("cors")
+const helmet = require("helmet")
 
 // initialize express instance
 const app = express()
+app.set("trust proxy", 1)
+app.disable("x-powered-by")
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}))
 
 // allowed frontend urls
 const allowedOrigins = [

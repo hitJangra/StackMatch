@@ -38,20 +38,24 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [authError, setAuthError] = useState('');
 
     // form submit handler
     const handleSubmit = async (e) => {
         // prevent page reload
         e.preventDefault();
+        setAuthError('');
 
         // validate all inputs
         if (!email.trim() || !password.trim()) {
+            setAuthError("Please fill in all fields.");
             addToast("Please fill in all fields.", "warning");
             return;
         }
 
         // enforce minimum password length
         if (password.length < 6) {
+            setAuthError("Password must be at least 6 characters.");
             addToast("Password must be at least 6 characters.", "warning");
             return;
         }
@@ -67,6 +71,7 @@ const Register = () => {
             addToast("Account created successfully!", "success");
             navigate("/home");
         } else {
+            setAuthError(result?.message || "Registration failed.");
             addToast(result?.message || "Registration failed. Please try again.", "error");
         }
     };
@@ -106,6 +111,11 @@ const Register = () => {
 
                     {/* signup form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {authError && (
+                            <div className="auth-error-banner" role="alert">
+                                {authError}
+                            </div>
+                        )}
                         {/* email address input */}
                         <div className="space-y-1.5">
                             <label 

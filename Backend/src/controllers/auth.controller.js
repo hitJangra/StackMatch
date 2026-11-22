@@ -11,10 +11,28 @@ const tokenBlacklistModel = require("../models/blacklist.model")
 async function registerUserController(req, res, next) {
     try {
         // grab fields from request body
-        const { username, email, password } = req.body
+        const body = req.body && typeof req.body === "object" ? req.body : {}
+        const { username, email, password } = body
+
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            !email.trim() ||
+            !password
+        ) {
+            return res.status(400).json({
+                message: "Valid email and password are required"
+            })
+        }
+
+        if (typeof username !== "string" || !username.trim()) {
+            return res.status(400).json({
+                message: "Please provide username, email and password"
+            })
+        }
 
         // ensure all required fields are present
-        if (!username || !email || !password) {
+        if (!username.trim() || !email.trim() || !password) {
             return res.status(400).json({
                 message: "Please provide username, email and password"
             })
@@ -37,7 +55,7 @@ async function registerUserController(req, res, next) {
 
         // check if username or email is already taken
         const isUserAlreadyExists = await userModel.findOne({
-            $or: [ { username }, { email } ]
+            $or: [ { username: username.trim() }, { email: email.trim().toLowerCase() } ]
         })
 
         // return error if already registered
@@ -52,8 +70,8 @@ async function registerUserController(req, res, next) {
 
         // save new user to database
         const user = await userModel.create({
-            username,
-            email,
+            username: username.trim(),
+            email: email.trim().toLowerCase(),
             password: hash
         })
 
@@ -91,10 +109,22 @@ async function registerUserController(req, res, next) {
 async function loginUserController(req, res, next) {
     try {
         // get login credentials
-        const { email, password } = req.body
+        const body = req.body && typeof req.body === "object" ? req.body : {}
+        const { email, password } = body
+
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            !email.trim() ||
+            !password
+        ) {
+            return res.status(400).json({
+                message: "Valid email and password are required"
+            })
+        }
 
         // look up user by email
-        const user = await userModel.findOne({ email })
+        const user = await userModel.findOne({ email: email.trim().toLowerCase() })
 
         // fail if user doesn't exist
         if (!user) {
@@ -155,7 +185,11 @@ async function logoutUserController(req, res, next) {
         }
 
         // wipe cookie from browser
-        res.clearCookie("token")
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax"
+        })
 
         // respond with logout success
         res.status(200).json({
@@ -192,7 +226,19 @@ async function getMeController(req, res, next) {
 async function updatePasswordController(req, res, next) {
     try {
         // extract old and new passwords
-        const { currentPassword, newPassword } = req.body
+        const body = req.body && typeof req.body === "object" ? req.body : {}
+        const { currentPassword, newPassword } = body
+
+        if (
+            typeof currentPassword !== "string" ||
+            typeof newPassword !== "string" ||
+            !currentPassword ||
+            !newPassword
+        ) {
+            return res.status(400).json({
+                message: "Valid current and new passwords are required"
+            })
+        }
 
         // check both passwords are provided
         if (!currentPassword || !newPassword) {

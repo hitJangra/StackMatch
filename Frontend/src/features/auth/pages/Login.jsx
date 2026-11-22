@@ -37,6 +37,7 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [authError, setAuthError] = useState('');
 
     // if already logged in, redirect to home silently
     // this replaces the full-page spinner guard so the login form
@@ -51,9 +52,11 @@ const Login = () => {
     const handleSubmit = async (e) => {
         // prevent page reload
         e.preventDefault();
+        setAuthError('');
 
         // check if inputs are non-empty
         if (!email.trim() || !password.trim()) {
+            setAuthError("Please fill in all fields.");
             addToast("Please fill in all fields.", "warning");
             return;
         }
@@ -69,6 +72,7 @@ const Login = () => {
             addToast("Logged in successfully!", "success");
             navigate('/home');
         } else {
+            setAuthError(result?.message || "Login failed.");
             addToast(result?.message || "Login failed. Please check your credentials.", "error");
         }
     };
@@ -107,6 +111,11 @@ const Login = () => {
 
                     {/* login form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {authError && (
+                            <div className="auth-error-banner" role="alert">
+                                {authError}
+                            </div>
+                        )}
                         {/* email field */}
                         <div className="space-y-1.5">
                             <label 
