@@ -38,6 +38,15 @@ async function generateInterViewReportController(req, res, next) {
         // clean up parser instance
         await parser.destroy()
 
+        const resumeText = typeof resumeContent?.text === "string"
+            ? resumeContent.text.trim()
+            : ""
+        if (resumeText.length < 50) {
+            return res.status(400).json({
+                message: "This PDF appears to be a scanned image with no selectable text. Please upload a text-based PDF resume (exported from Word, Google Docs, or Overleaf)."
+            })
+        }
+
         // get job description from form body
         const { jobDescription } = req.body
 
@@ -50,7 +59,7 @@ async function generateInterViewReportController(req, res, next) {
         if (!jobDescription || !jobDescription.trim()) {
             // call ai to extract search keywords from resume
             const recommendedJobKeywords = await generateJobKeywords({
-                resume: resumeContent.text,
+                resume: resumeText,
                 customApiKey,
                 aiProvider,
                 aiModel
@@ -65,7 +74,7 @@ async function generateInterViewReportController(req, res, next) {
 
         // generate deterministic cache key for this scan
         const cacheKey = generateScoreCacheKey({
-            resumeText: resumeContent.text,
+            resumeText,
             jobDescription,
             aiProvider,
             aiModel
@@ -91,7 +100,7 @@ async function generateInterViewReportController(req, res, next) {
         } else {
             // cache miss: call unified ai service (Gemini / OpenAI / Groq)
             interViewReportByAi = await generateInterviewReport({
-                resume: resumeContent.text,
+                resume: resumeText,
                 jobDescription,
                 customApiKey,
                 aiProvider,
@@ -123,7 +132,7 @@ async function generateInterViewReportController(req, res, next) {
         // save report to database under user's profile in unified InterviewReport model
         const interviewReport = await interviewReportModel.create({
             user: req.user.id,
-            resume: resumeContent.text,
+            resume: resumeText,
             jobDescription,
             ...interViewReportByAi
         })

@@ -132,7 +132,7 @@ const Home = () => {
             addToast("Interview plan generated!", "success");
             navigate(`/interview/${data._id}`);
         } catch (err) {
-            addToast("Failed to generate report. Please try again.", "error");
+            addToast(err?.response?.data?.message || "Failed to generate report. Please try again.", "error");
         }
     };
 
@@ -186,7 +186,7 @@ const Home = () => {
             }
         } catch (err) {
             console.error("Auto-analyze error:", err);
-            addToast("Failed to fetch recommendations.", "error");
+            addToast(err?.response?.data?.message || "Failed to fetch recommendations.", "error");
         } finally {
             setAnalyzingResume(false);
             setJobsLoading(false);
@@ -215,7 +215,7 @@ const Home = () => {
             addToast("Interview plan generated!", "success");
             navigate(`/interview/${data._id}`);
         } catch (err) {
-            addToast("Failed to generate report.", "error");
+            addToast(err?.response?.data?.message || "Failed to generate report.", "error");
         } finally {
             setMatchingJobId(null);
         }
