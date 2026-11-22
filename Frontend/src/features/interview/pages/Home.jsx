@@ -46,6 +46,7 @@ const Home = () => {
     const [analyzingResume, setAnalyzingResume] = useState(false);
     const [matchingJobId, setMatchingJobId] = useState(null);
     const [homeMode, setHomeMode] = useState("find");
+    const [savedJobPrepBanner, setSavedJobPrepBanner] = useState(false);
     const reduceMotion = useReducedMotion();
 
     // router and toast
@@ -56,6 +57,22 @@ const Home = () => {
     // fetch past scan reports on page load and handle state from job board
     useEffect(() => {
         getReports();
+
+        if (location.state?.homeMode === "match") {
+            setHomeMode("match");
+        }
+
+        if (location.state?.savedJobPrepBanner) {
+            setSavedJobPrepBanner(true);
+        }
+
+        if (location.state?.prepJob) {
+            const prepJob = location.state.prepJob;
+            setJobDescription(prepJob.description || [
+                prepJob.title,
+                prepJob.company ? `at ${prepJob.company}` : ""
+            ].filter(Boolean).join(" "));
+        }
 
         // check if user clicked "Match & Prep" from Jobs page
         if (location.state?.jobDescription) {
@@ -310,6 +327,11 @@ const Home = () => {
 
                 ) : (
                     <motion.div layout key="match">
+                        {savedJobPrepBanner && (
+                            <div className="saved-job-prep-banner" role="status">
+                                Upload your resume to score this saved job and generate your prep report.
+                            </div>
+                        )}
                         <motion.div
                             layout
                             className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800"
@@ -467,7 +489,7 @@ const Home = () => {
             )}
 
             {/* recent scan history table preview */}
-            {reports.length > 0 && (
+            {(reports?.length || 0) > 0 && (
                 <section className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
                         <div>
@@ -487,7 +509,7 @@ const Home = () => {
                     </div>
 
                     <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs divide-y divide-zinc-100 dark:divide-zinc-800">
-                        {reports.slice(0, 5).map((r) => (
+                        {(reports || []).slice(0, 5).map((r) => (
                             <div 
                                 key={r._id} 
                                 onClick={() => navigate(`/interview/${r._id}`)}

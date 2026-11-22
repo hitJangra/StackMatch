@@ -949,6 +949,17 @@ textarea:focus-visible {
   backdrop-filter: blur(12px);
 }
 
+.saved-job-prep-banner {
+  margin: var(--space-md) var(--space-md) 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-card));
+  color: var(--color-ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .auth-page {
   position: relative;
   min-height: 100dvh;

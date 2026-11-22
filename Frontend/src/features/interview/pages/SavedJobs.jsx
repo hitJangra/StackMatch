@@ -83,32 +83,47 @@ const SavedJobs = () => {
     };
 
     const handlePrep = async (item) => {
+        const linkedReportId =
+            item.interviewReportId ||
+            item.reportId ||
+            item.interviewReport ||
+            null;
+        if (linkedReportId) {
+            navigate(`/interview/${typeof linkedReportId === "object" ? linkedReportId._id : linkedReportId}`);
+            return;
+        }
+
         try {
             const response = await getAllInterviewReports();
-            const match = (response?.interviewReports || []).find((report) =>
-                report.title?.toLowerCase() === item.title?.toLowerCase()
-            );
+            const match = (response?.interviewReports || []).find((report) => {
+                const titleMatches = report.title?.toLowerCase() === item.title?.toLowerCase();
+                const hasMatchData = Number(report.matchScore) > 0;
+                return titleMatches && hasMatchData;
+            });
             if (match?._id) {
                 navigate(`/interview/${match._id}`);
                 return;
             }
         } catch {
-            // Fall back to a local report shell.
+            // No report found; open the matching workflow instead.
         }
 
-        const localId = `local-prep-${Date.now()}`;
-        localStorage.setItem(`local_report_${localId}`, JSON.stringify({
-            _id: localId,
-            title: item.title || 'Target Position',
-            jobDescription: item.description || `${item.title || 'Target Position'} at ${item.company || 'Company'}`,
-            jobUrl: getDirectUrl(item),
-            matchScore: 0,
-            technicalQuestions: [],
-            behavioralQuestions: [],
-            skillGaps: [],
-            preparationPlan: []
-        }));
-        navigate(`/interview/${localId}`);
+        const jobDescription = [
+            item.description?.trim(),
+            item.title && item.company ? `${item.title} at ${item.company}` : item.title || item.company || ""
+        ].filter(Boolean).join("\n\n");
+
+        navigate('/home', {
+            state: {
+                homeMode: 'match',
+                savedJobPrepBanner: true,
+                prepJob: {
+                    title: item.title || 'Target Position',
+                    company: item.company || '',
+                    description: jobDescription
+                }
+            }
+        });
     };
 
     const handleCreateItem = async (event) => {
