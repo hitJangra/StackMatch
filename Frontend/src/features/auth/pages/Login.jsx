@@ -15,11 +15,11 @@ import {
     Eye, 
     EyeOff, 
     ArrowRight, 
-    Sparkles, 
     Sun, 
     Moon,
-    ShieldCheck
+    ArrowLeft
 } from 'lucide-react';
+import StackMatchLogo from '../../../components/StackMatchLogo';
 
 // login view component
 const Login = () => {
@@ -43,7 +43,7 @@ const Login = () => {
     // doesn't flash a spinner just because loading briefly goes true
     useEffect(() => {
         if (!loading && user) {
-            navigate('/');
+            navigate('/home');
         }
     }, [loading, user]);
 
@@ -67,7 +67,7 @@ const Login = () => {
         // handle response
         if (result?.success) {
             addToast("Logged in successfully!", "success");
-            navigate('/'); // go to home page
+            navigate('/home');
         } else {
             addToast(result?.message || "Login failed. Please check your credentials.", "error");
         }
@@ -75,17 +75,13 @@ const Login = () => {
 
     return (
         // main login wrapper
-        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden select-none">
-            {/* ambient decorative background glows */}
-            <div className="absolute top-1/4 -left-20 w-80 h-80 bg-zinc-300/40 dark:bg-zinc-800/30 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-zinc-400/20 dark:bg-zinc-700/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="auth-page">
 
             {/* light / dark mode toggle */}
             <div className="absolute top-6 right-6 z-20">
                 <button
                     onClick={toggleTheme}
-                    className="p-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md shadow-xs hover:bg-white dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-300 transition-all cursor-pointer"
+                    className="p-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 shadow-xs hover:bg-white dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
                     title="Toggle Theme"
                     type="button"
                 >
@@ -94,14 +90,13 @@ const Login = () => {
             </div>
 
             {/* login card container */}
+            <Link to="/" className="auth-back"><ArrowLeft size={16} /> Back to StackMatch</Link>
             <div className="relative z-10 w-full max-w-md">
-                <div className="p-8 sm:p-10 rounded-2xl bg-white/75 dark:bg-zinc-900/65 backdrop-blur-xl border border-white/60 dark:border-zinc-800/80 shadow-2xl shadow-zinc-900/10 dark:shadow-black/60 ring-1 ring-black/5 dark:ring-white/10 space-y-6">
+                <div className="auth-card">
                     
                     {/* card branding and title */}
                     <div className="text-center space-y-2">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md mb-2">
-                            <Sparkles className="w-6 h-6" />
-                        </div>
+                        <StackMatchLogo compact />
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
                             Welcome Back
                         </h1>
@@ -131,7 +126,7 @@ const Login = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="you@example.com"
-                                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
+                                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-colors shadow-xs"
                                     autoComplete="email"
                                 />
                             </div>
@@ -158,7 +153,7 @@ const Login = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
+                                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-colors shadow-xs"
                                     autoComplete="current-password"
                                 />
                                 {/* toggle password visibility button */}
@@ -178,12 +173,12 @@ const Login = () => {
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 font-medium text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
+                                className="wise-primary-pill w-full"
                             >
                                 {submitting ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                        <span>Signing in...</span>
+                                        <span>Signing in</span>
                                     </>
                                 ) : (
                                     <>
@@ -198,7 +193,7 @@ const Login = () => {
                     {/* bottom footer and register link */}
                     <div className="pt-2 border-t border-zinc-100/80 dark:border-zinc-800/80 text-center space-y-3">
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Don't have an account?{' '}
+                            Don&apos;t have an account?{' '}
                             <Link 
                                 to="/register" 
                                 className="font-semibold text-zinc-900 dark:text-zinc-100 hover:underline transition-colors"
@@ -207,11 +202,6 @@ const Login = () => {
                             </Link>
                         </p>
 
-                        {/* security indicator */}
-                        <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Protected by JWT and bcrypt encryption</span>
-                        </div>
                     </div>
 
                 </div>

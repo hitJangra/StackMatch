@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     // loading state while verifying existing session — starts true
     // so Protected never renders child routes before the check completes
     const [loading, setLoading] = useState(true)
+    const [loggingOut, setLoggingOut] = useState(false)
 
     // run the session check once when the app first mounts
     // keeping it here (not in useAuth) means it fires exactly once
@@ -28,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
         // pass down user and loading flags with their setters
-        <AuthContext.Provider value={{ user, setUser, loading, setLoading }} >
+        <AuthContext.Provider value={{ user, setUser, loading, setLoading, loggingOut, setLoggingOut }} >
             {children}
         </AuthContext.Provider>
     )

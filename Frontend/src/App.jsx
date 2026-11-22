@@ -1,7 +1,7 @@
 // router provider to render configured routes
 import { RouterProvider } from "react-router"
 // router definition
-import { router } from "./app.routes.jsx"
+import { router } from "./routes.jsx"
 // auth context provider
 import { AuthProvider } from "./features/auth/auth.context.jsx"
 // interview state provider

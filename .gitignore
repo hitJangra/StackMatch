@@ -1,0 +1,4 @@
+
+# Editor & Playwright artifacts
+.vscode/
+.playwright-mcp/

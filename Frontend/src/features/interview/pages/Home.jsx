@@ -1,10 +1,10 @@
 // react hooks
 import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 // navigation hook
 import { useNavigate, useLocation } from 'react-router';
 // ui icons
 import { 
-    Sparkles, 
     Upload, 
     FileText, 
     CheckCircle, 
@@ -20,8 +20,6 @@ import {
 } from 'lucide-react';
 // interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
-// spinner component
-import Spinner from '../../../components/Spinner';
 // toast notifications
 import { useToast } from '../../../components/Toast';
 // api call to fetch recommended jobs and persist them
@@ -30,8 +28,7 @@ import { getRecommendedJobs, saveLocalPastJobs } from '../services/interview.api
 import { api } from '../../../lib/axios';
 // helper for linkedin job urls
 import { getLinkedInJobUrl } from '../../../utils/linkedin.js';
-// minimalist scraper progress loading UI
-import ScraperLoadingProgress from '../../../components/ScraperLoadingProgress';
+import { AnalyzingResumeLoader } from '../../../components/Loaders';
 
 // home dashboard component for scanning resumes and getting recommendations
 const Home = () => {
@@ -49,6 +46,8 @@ const Home = () => {
     const [jobsLoading, setJobsLoading] = useState(false);
     const [analyzingResume, setAnalyzingResume] = useState(false);
     const [matchingJobId, setMatchingJobId] = useState(null);
+    const [homeMode, setHomeMode] = useState("find");
+    const reduceMotion = useReducedMotion();
 
     // router and toast
     const navigate = useNavigate();
@@ -191,81 +190,77 @@ const Home = () => {
     };
 
     // show full-screen spinner if generating plan
-    if (loading && !jobsLoading && !analyzingResume) {
-        return <Spinner message="Generating your interview plan..." />;
-    }
+    const analysisLabel = analyzingResume
+        ? 'Scanning resume...'
+        : jobsLoading
+            ? 'Finding matching jobs...'
+            : 'Generating match...';
 
     return (
         <div className="space-y-10 w-full animate-in fade-in duration-300">
             {/* page title header */}
-            <div className="pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    StackMatch — Resume Screener & Interview Prep
+            <div className="wise-page-header">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+                    Resume Match
                 </h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-2xl">
-                    Upload your resume to receive instantaneous role alignment, ATS scoring, custom interview roadmaps, and matching market opportunities.
-                </p>
             </div>
 
-            {/* scan inputs card */}
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800">
-                    {/* job description column */}
-                    <div className="p-6 sm:p-7 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Target Job Description
-                                </h2>
-                            </div>
-                            <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
-                                Required for Match
-                            </span>
-                        </div>
-
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Paste the full job listing here to evaluate tailored questions and skill gaps, or leave empty to discover roles based on your resume.
-                        </p>
-
-                        <div className="space-y-1.5">
-                            <textarea
-                                value={jobDescription}
-                                onChange={(e) => setJobDescription(e.target.value)}
-                                placeholder="Paste the full job description here...&#10;e.g. 'Senior Frontend Engineer requires proficiency in React, TypeScript, and large-scale system design...'"
-                                maxLength={5000}
-                                rows={10}
-                                className="w-full p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all resize-none"
-                            />
-                            <div className="text-[11px] text-zinc-400 font-mono text-right">
-                                {jobDescription.length} / 5000 chars
-                            </div>
-                        </div>
+            <motion.div
+                className="wise-beam-border"
+                layout
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+            >
+            <div className="wise-beam-inner rounded-3xl bg-white dark:bg-zinc-900 overflow-hidden">
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="home-mode-toggle" role="tablist" aria-label="Resume matching mode">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={homeMode === "find"}
+                            onClick={() => setHomeMode("find")}
+                            className={homeMode === "find" ? "home-mode-active" : ""}
+                        >
+                            {homeMode === "find" && (
+                                <motion.span
+                                    layoutId="activeModePill"
+                                    className="home-mode-pill"
+                                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 350, damping: 30 }}
+                                />
+                            )}
+                            Find Jobs
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={homeMode === "match"}
+                            onClick={() => setHomeMode("match")}
+                            className={homeMode === "match" ? "home-mode-active" : ""}
+                        >
+                            {homeMode === "match" && (
+                                <motion.span
+                                    layoutId="activeModePill"
+                                    className="home-mode-pill"
+                                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 350, damping: 30 }}
+                                />
+                            )}
+                            Match a JD
+                        </button>
                     </div>
+                </div>
 
-                    {/* resume upload column */}
-                    <div className="p-6 sm:p-7 space-y-5 flex flex-col justify-between">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                        Your Candidate Resume
-                                    </h2>
-                                </div>
-                                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                                    PDF Upload
-                                </span>
-                            </div>
-
-                            {/* file dropzone */}
-                            <label 
+                <motion.div
+                    layout
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+                >
+                <AnimatePresence mode="popLayout" initial={false}>
+                {homeMode === "find" ? (
+                    <motion.div layout key="find">
+                        <div className="p-6 sm:p-8">
+                            <motion.label
+                                layout
                                 htmlFor="resume-upload"
-                                className={`flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center ${
-                                    selectedFileName
-                                        ? 'border-indigo-500/80 bg-indigo-50/40 dark:bg-indigo-950/20'
-                                        : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-950/40'
-                                }`}
+                                className={`home-upload-box ${selectedFileName ? "home-upload-box-selected" : ""}`}
+                                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
                             >
                                 <input
                                     ref={resumeInputRef}
@@ -275,65 +270,107 @@ const Home = () => {
                                     className="hidden"
                                     onChange={handleFileChange}
                                 />
-                                <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 shadow-xs flex items-center justify-center text-zinc-600 dark:text-zinc-300 mb-3">
-                                    {selectedFileName ? (
-                                        <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                                    ) : (
-                                        <Upload className="w-6 h-6" />
-                                    )}
+                                <div className="home-upload-icon">
+                                    {selectedFileName ? <FileText size={24} /> : <Upload size={24} />}
                                 </div>
-                                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                                    {selectedFileName || 'Click to select or drag and drop your resume'}
+                                <p className="home-upload-title">
+                                    {selectedFileName || "Upload your resume"}
                                 </p>
-                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-                                    PDF only (Max 3MB limit)
-                                </p>
-                            </label>
+                                <p className="home-upload-meta">PDF, up to 3MB</p>
+                            </motion.label>
                         </div>
-
-                        {/* tip badge */}
-                        <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                            <CheckCircle className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
-                            <span>Your resume is parsed securely in-memory to extract core competencies and benchmark against ATS.</span>
+                        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleAutoAnalyze}
+                                disabled={analyzingResume || jobsLoading}
+                                className="wise-primary-pill"
+                            >
+                                <span>{analyzingResume ? "Finding Jobs" : jobsLoading ? "Finding Jobs" : "Find Matching Jobs"}</span>
+                                <ArrowRight size={16} />
+                            </button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
 
-                {/* card action buttons */}
-                <div className="px-6 py-4 bg-zinc-50/70 dark:bg-zinc-950/50 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Powered by Unified AI Architecture & Apify Scraper
-                    </span>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <button
-                            onClick={handleAutoAnalyze}
-                            disabled={analyzingResume || jobsLoading}
-                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 transition-all cursor-pointer disabled:opacity-50"
+                ) : (
+                    <motion.div layout key="match">
+                        <motion.div
+                            layout
+                            className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800"
+                            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>{analyzingResume ? "Analyzing Resume..." : jobsLoading ? "Searching Jobs..." : "Find Matching Jobs"}</span>
-                        </button>
+                            <motion.div layout className="p-6 sm:p-7" transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-semibold">Your Candidate Resume</h2>
+                                    <span className="wise-label">PDF</span>
+                                </div>
+                                <label
+                                    htmlFor="resume-upload"
+                                    className={`home-upload-box home-upload-box-compact ${selectedFileName ? "home-upload-box-selected" : ""}`}
+                                >
+                                    <input
+                                        ref={resumeInputRef}
+                                        id="resume-upload"
+                                        type="file"
+                                        accept=".pdf"
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                    />
+                                    <div className="home-upload-icon">
+                                        {selectedFileName ? <FileText size={22} /> : <Upload size={22} />}
+                                    </div>
+                                    <p className="home-upload-title">{selectedFileName || "Upload resume"}</p>
+                                    <p className="home-upload-meta">PDF, up to 3MB</p>
+                                </label>
+                            </motion.div>
 
-                        <button
-                            onClick={handleGenerateReport}
-                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer"
-                        >
-                            <span>Generate Interview Strategy</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
+                            <AnimatePresence mode="popLayout">
+                            <motion.div
+                                layout
+                                key="target-job"
+                                initial={reduceMotion ? false : { opacity: 0, scale: 0.96, x: 20, filter: "blur(6px)" }}
+                                animate={{ opacity: 1, scale: 1, x: 0, filter: "blur(0px)" }}
+                                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, x: 20, filter: "blur(6px)" }}
+                                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+                                className="p-6 sm:p-7 home-glass-panel"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-sm font-semibold">Target Job Description</h2>
+                                    <span className="wise-label">Required</span>
+                                </div>
+                                <textarea
+                                    value={jobDescription}
+                                    onChange={(e) => setJobDescription(e.target.value)}
+                                    placeholder="Paste the job description"
+                                    maxLength={5000}
+                                    rows={8}
+                                    className="w-full min-h-56 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#163300] dark:focus:ring-[#9FE870] resize-none"
+                                />
+                            </motion.div>
+                            </AnimatePresence>
+                        </motion.div>
+                        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleGenerateReport}
+                                className="wise-primary-pill"
+                            >
+                                <span>Score Match &amp; Prep</span>
+                                <ArrowRight size={16} />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+                {(loading || jobsLoading || analyzingResume) && (
+                    <div className="home-analysis-loader">
+                        <AnalyzingResumeLoader label={analysisLabel} />
                     </div>
-                </div>
+                )}
+                </motion.div>
             </div>
+            </motion.div>
 
-            {/* Premium Minimalist Scraper Loading Indicator */}
-            {(jobsLoading || analyzingResume) && (
-                <ScraperLoadingProgress 
-                    active={jobsLoading || analyzingResume} 
-                    title={analyzingResume ? "Analyzing resume competencies..." : "Live LinkedIn intelligence query"}
-                    estimatedSeconds={35}
-                />
-            )}
 
             {/* live recommended job cards */}
             {(recommendedJobs.length > 0) && (
@@ -342,9 +379,6 @@ const Home = () => {
                         <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                             Live Recommended Jobs
                         </h2>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            Scraped from live listings matching your resume keywords. Click <em>Match Profile</em> to generate a targeted prep plan.
-                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -355,22 +389,24 @@ const Home = () => {
                             return (
                                 <div 
                                     key={idx}
-                                    className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group"
+                                    className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
                                 >
                                     <div className="space-y-3">
                                         <div className="flex items-start justify-between gap-3">
                                             <span className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                                                 <Briefcase className="w-4 h-4" />
                                             </span>
-                                            <a
-                                                href={externalApplyUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                            >
-                                                <span>Apply</span>
-                                                <ExternalLink className="w-3 h-3" />
-                                            </a>
+                                            {externalApplyUrl && (
+                                                <a
+                                                    href={externalApplyUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="wise-primary-pill"
+                                                >
+                                                    <span>Apply</span>
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                            )}
                                         </div>
 
                                         <div>
@@ -402,7 +438,7 @@ const Home = () => {
                                             disabled={isMatchingThis}
                                             className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-all cursor-pointer disabled:opacity-50"
                                         >
-                                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                                            <Search className="w-3.5 h-3.5 text-indigo-500" />
                                             <span>{isMatchingThis ? 'Analyzing...' : 'Match & Prep'}</span>
                                         </button>
                                     </div>
@@ -422,11 +458,10 @@ const Home = () => {
                                 Previous Scans
                             </h2>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                Select any past analysis to review roadmaps, questions, and skill breakdowns.
                             </p>
                         </div>
                         <button
-                            onClick={() => navigate('/history')}
+                            onClick={() => navigate('/saved-jobs')}
                             className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                         >
                             <span>View all</span>

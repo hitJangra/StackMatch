@@ -1,15 +1,31 @@
 // react hooks
 import { useContext } from "react"
+import { useNavigate } from "react-router"
 // auth context
 import { AuthContext } from "../auth.context"
 // auth api service functions — getMe is no longer needed here
 // since the session check now lives in AuthProvider
 import { login, logout, register } from "../services/auth.api"
 
+export function clearUserSpecificState() {
+    try {
+        const theme = localStorage.getItem("theme")
+        const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+        keys.forEach((key) => {
+            if (key && key !== "theme") localStorage.removeItem(key)
+        })
+        if (theme) localStorage.setItem("theme", theme)
+        sessionStorage.clear()
+    } catch (error) {
+        console.error("Failed to clear user-specific state:", error)
+    }
+}
+
 // custom hook providing authentication state and actions
 export const useAuth = () => {
     // consume auth context
     const context = useContext(AuthContext)
+    const navigate = useNavigate()
 
     // enforce provider usage
     if (!context) {
@@ -17,7 +33,7 @@ export const useAuth = () => {
     }
 
     // destructure state and setters
-    const { user, setUser, loading, setLoading } = context
+    const { user, setUser, loading, setLoading, setLoggingOut } = context
 
     // NOTE: the getMe() session check has been moved into AuthProvider
     // so it runs exactly once at app startup — removing it from here
@@ -31,6 +47,7 @@ export const useAuth = () => {
             const data = await login({ email, password })
             // update state on success
             if (data?.user) {
+                clearUserSpecificState()
                 setUser(data.user)
                 return { success: true }
             }
@@ -52,6 +69,7 @@ export const useAuth = () => {
             const data = await register({ username, email, password })
             // update state on success
             if (data?.user) {
+                clearUserSpecificState()
                 setUser(data.user)
                 return { success: true }
             }
@@ -67,12 +85,15 @@ export const useAuth = () => {
 
     // action to log out and clear state
     const handleLogout = async () => {
+        setLoggingOut?.(true)
         try {
             // call logout endpoint to blacklist token
             await logout()
         } finally {
-            // clear user in state
-            setUser(null)
+            navigate("/", { replace: true })
+            clearUserSpecificState()
+            window.setTimeout(() => setUser(null), 50)
+            window.setTimeout(() => setLoggingOut?.(false), 250)
         }
     }
 

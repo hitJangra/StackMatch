@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertTriangle, Search, Filter, Sparkles, Hash, Layers } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Search, Filter, Hash, Layers } from 'lucide-react';
 
 /**
  * Resume Keyword Heatmap Component
@@ -131,7 +131,7 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
     }, [heatmapData, activeFilter, searchQuery]);
 
     return (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+        <div className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
             {/* Header */}
             <div className="p-5 sm:p-6 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

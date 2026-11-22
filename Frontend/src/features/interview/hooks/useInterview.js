@@ -64,7 +64,7 @@ export const useInterview = () => {
     }
 
     // download tailored resume pdf via client-side @react-pdf/renderer
-    // NOTE: intentionally does NOT touch shared context loading — Interview.jsx
+    // NOTE: intentionally does NOT touch shared context loading — InterviewReport.jsx
     // manages its own local `downloading` state so the report page never unmounts.
     const getResumePdf = async (interviewReportId, reportData) => {
         try {

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 // icons
 import { 
-    Sparkles, 
     KeyRound, 
     CheckCircle2, 
     Eye, 
@@ -16,7 +15,9 @@ import {
     Sun,
     Server,
     Lock,
-    Key
+    Key,
+    LogOut,
+    Monitor
 } from 'lucide-react';
 // auth hook
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -62,9 +63,9 @@ const GROQ_MODELS = [
 // settings view for api keys, theme, and password
 const Settings = () => {
     // authenticated user
-    const { user } = useAuth();
+    const { user, handleLogout } = useAuth();
     // theme switcher
-    const { theme, toggleTheme } = useTheme();
+    const { theme, setTheme } = useTheme();
     // toast notifications
     const { addToast } = useToast();
 
@@ -216,18 +217,12 @@ const Settings = () => {
         // settings page container
         <div className="min-h-screen flex flex-col w-full overflow-y-scroll space-y-8 max-w-4xl animate-in fade-in duration-300 pb-16">
             {/* page header */}
-            <div className="pb-6 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="wise-page-header">
                 <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                        Settings & Preferences
+                    <h1 className="text-xl font-semibold tracking-tight">
+                        Settings
                     </h1>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                        BYOK & Local AI
-                    </span>
                 </div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Manage your AI inference provider, API credentials, local models, interface appearance, and account security.
-                </p>
             </div>
 
             {/* ai engine provider configuration card */}
@@ -518,7 +513,7 @@ const Settings = () => {
                     <button
                         type="button"
                         onClick={handleSaveAiConfig}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer"
+                        className="wise-primary-pill"
                     >
                         <Save className="w-3.5 h-3.5" />
                         <span>Save Configuration</span>
@@ -526,25 +521,30 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* appearance toggle card */}
-            <div className="min-h-[140px] p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col justify-between space-y-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                        {theme === 'dark' ? <Moon className="w-4 h-4 text-indigo-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
-                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Interface Appearance</h2>
-                    </div>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Choose between Vercel-inspired clean Light mode and Anthropic-inspired Dark mode.
-                    </p>
-                </div>
-                <div>
-                    <button
-                        onClick={toggleTheme}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                    >
-                        {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-                        <span>Current: {theme === 'dark' ? 'Dark Theme' : 'Light Theme'} (Click to toggle)</span>
-                    </button>
+            <div className="appearance-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Appearance</h2>
+                <div className="theme-segmented" role="radiogroup" aria-label="Theme">
+                    {[
+                        { id: 'system', label: 'System', icon: Monitor },
+                        { id: 'light', label: 'Light', icon: Sun },
+                        { id: 'dark', label: 'Dark', icon: Moon }
+                    ].map((option) => {
+                        const Icon = option.icon;
+                        const active = theme === option.id;
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={active}
+                                className={active ? 'theme-segmented-active' : ''}
+                                onClick={() => setTheme(option.id)}
+                            >
+                                <Icon size={15} />
+                                <span>{option.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -665,7 +665,7 @@ const Settings = () => {
                             <button
                                 type="submit"
                                 disabled={isUpdatingPassword}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                                className="wise-primary-pill disabled:opacity-50"
                             >
                                 <Key className="w-3.5 h-3.5" />
                                 <span>{isUpdatingPassword ? "Updating..." : "Update Password"}</span>
@@ -673,6 +673,23 @@ const Settings = () => {
                         </div>
                     </form>
                 </div>
+            </div>
+
+            <div className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Account</h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{user?.email || 'Signed in'}</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={async () => {
+                        await handleLogout();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                    <LogOut size={16} />
+                    Log out
+                </button>
             </div>
         </div>
     );

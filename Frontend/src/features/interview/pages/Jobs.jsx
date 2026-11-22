@@ -3,17 +3,17 @@ import React, { useState, useEffect } from 'react';
 // navigation hook
 import { useNavigate } from 'react-router';
 // ui icons
-import { Briefcase, Search, Sparkles, ArrowUpRight, MapPin, Building2, ChevronDown, SlidersHorizontal, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
+import { Briefcase, Search, ArrowUpRight, ChevronDown, SlidersHorizontal, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
 // api call to scrape job recommendations and manage past recommendations
-import { getRecommendedJobs, getPastRecommendations, saveLocalPastJobs, getLocalPastJobs } from '../services/interview.api';
+import { getRecommendedJobs, getPastRecommendations, saveLocalPastJobs, getLocalPastJobs, getAllInterviewReports } from '../services/interview.api';
 // helper for linkedin job urls
 import { getLinkedInJobUrl } from '../../../utils/linkedin';
 // toast alerts
 import { useToast } from '../../../components/Toast';
-import ScraperLoadingProgress from '../../../components/ScraperLoadingProgress';
-import { saveJobToKanban } from './Kanban';
+import { WaveLoader } from '../../../components/Loaders';
+import { saveJobToSavedJobs } from './SavedJobs';
 
-// shared select field component for minimalist glassmorphic dropdowns
+// shared select field component
 const FilterSelect = ({ label, value, onChange, options, icon: Icon }) => (
     <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
         <label className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1">
@@ -54,6 +54,37 @@ const Jobs = () => {
     const { addToast } = useToast();
     // navigation router
     const navigate = useNavigate();
+
+    const handlePrep = async (job) => {
+        try {
+            const response = await getAllInterviewReports();
+            const reports = response?.interviewReports || [];
+            const match = reports.find((report) =>
+                report.title?.toLowerCase() === job.title?.toLowerCase()
+                || report.jobDescription?.includes(job.description)
+            );
+            if (match?._id) {
+                navigate(`/interview/${match._id}`);
+                return;
+            }
+        } catch {
+            // The dashboard flow below can still prepare the job.
+        }
+        const localId = `local-prep-${Date.now()}`;
+        const localReport = {
+            _id: localId,
+            title: job.title || 'Target Position',
+            jobDescription: job.description || `${job.title || 'Target Position'} at ${job.company || 'Company'}`,
+            jobUrl: job.url || '',
+            matchScore: 0,
+            technicalQuestions: [],
+            behavioralQuestions: [],
+            skillGaps: [],
+            preparationPlan: []
+        };
+        localStorage.setItem(`local_report_${localId}`, JSON.stringify(localReport));
+        navigate(`/interview/${localId}`);
+    };
 
     // fetch all past recommended jobs on mount
     useEffect(() => {
@@ -150,13 +181,10 @@ const Jobs = () => {
         // jobs page container
         <div className="space-y-8 animate-in fade-in duration-300">
             {/* page header */}
-            <div className="pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    Live Job Recommendations
+            <div className="wise-page-header">
+                <h1 className="text-xl font-semibold tracking-tight">
+                    Jobs
                 </h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Search active market opportunities matching your target roles scraped via Apify.
-                </p>
             </div>
 
             {/* ── filter panel ── */}
@@ -165,7 +193,6 @@ const Jobs = () => {
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
                     <span>Search Filters</span>
-                    <span className="ml-auto text-[11px] font-normal text-zinc-400">Applied before fetching</span>
                 </div>
 
                 {/* three filter dropdowns */}
@@ -175,7 +202,6 @@ const Jobs = () => {
                         value={location}
                         onChange={setLocation}
                         options={locationOptions}
-                        icon={MapPin}
                     />
                     <FilterSelect
                         label="Experience Level"
@@ -195,7 +221,7 @@ const Jobs = () => {
                 <div className="flex flex-wrap gap-1.5 pt-1">
                     {location !== 'any' && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                            📍 {location}
+                            {location}
                         </span>
                     )}
                     {experience !== 'any' && (
@@ -227,20 +253,20 @@ const Jobs = () => {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                    className="wise-primary-pill disabled:opacity-50"
                 >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Search className="w-3.5 h-3.5" />
                     <span>{loading ? "Searching..." : "Find Matches"}</span>
                 </button>
             </form>
 
             {/* Premium minimalist loading indicator */}
             {loading && (
-                <ScraperLoadingProgress 
-                    active={loading} 
-                    title={`Querying live LinkedIn indices for ${location !== 'any' ? location : 'Global market'}`}
-                    estimatedSeconds={40}
-                />
+                <div className="page-loading-area page-loading-area--compact">
+                    <div className="loader-theme-card">
+                        <WaveLoader label="Loading jobs..." />
+                    </div>
+                </div>
             )}
 
             {/* job listing cards — live search results */}
@@ -248,7 +274,7 @@ const Jobs = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-indigo-500" />
+                            <Search className="w-4 h-4 text-indigo-500" />
                             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                                 Live Search Results
                             </h2>
@@ -262,7 +288,7 @@ const Jobs = () => {
                         {jobs.map((job, idx) => (
                             <div
                                 key={job.url || idx}
-                                className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group"
+                                className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
                             >
                                 <div className="space-y-3">
                                     {/* job title — clickable link to linkedin with arrow icon */}
@@ -279,19 +305,8 @@ const Jobs = () => {
                                         </a>
                                     </h3>
                                     {/* company and location */}
-                                    <div className="flex flex-wrap gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                        {job.company && (
-                                            <span className="inline-flex items-center gap-1">
-                                                <Building2 className="w-3 h-3 text-zinc-400" />
-                                                {job.company}
-                                            </span>
-                                        )}
-                                        {job.location && (
-                                            <span className="inline-flex items-center gap-1">
-                                                <MapPin className="w-3 h-3 text-zinc-400" />
-                                                {job.location}
-                                            </span>
-                                        )}
+                                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                        {[job.company, job.location].filter(Boolean).join(' · ')}
                                     </div>
                                     {/* description snippet */}
                                     {job.description && (
@@ -303,36 +318,38 @@ const Jobs = () => {
 
                                 {/* card footer actions */}
                                 <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex gap-2">
-                                    <a
-                                        href={getLinkedInJobUrl(job)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
-                                        title="Open application page on LinkedIn"
-                                    >
-                                        <span>Apply on LinkedIn</span>
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </a>
+                                    {getLinkedInJobUrl(job) && (
+                                        <a
+                                            href={getLinkedInJobUrl(job)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="wise-primary-pill flex-1"
+                                            title="Open application page"
+                                        >
+                                            <span>Apply</span>
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
+                                    )}
 
                                     <button
                                         onClick={() => {
-                                            const added = saveJobToKanban(job);
-                                            if (added) addToast(`Added "${job.title}" to Tracker!`, "success");
-                                            else addToast(`"${job.title}" is already in your Tracker.`, "info");
+                                            saveJobToSavedJobs(job)
+                                                .then((added) => addToast(added ? `Added "${job.title}" to Saved Jobs!` : `Could not save "${job.title}".`, added ? "success" : "error"))
+                                                .catch(() => addToast("Could not save job.", "error"));
                                         }}
                                         className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                                        title="Track this application in Tracker"
+                                        title="Save this application"
                                     >
                                         <BookmarkPlus className="w-3.5 h-3.5" />
                                     </button>
 
                                     <button
-                                        onClick={() => navigate('/', { state: { targetJob: job } })}
-                                        className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer"
-                                        title="Match this job with your resume on Home"
+                                        onClick={() => handlePrep(job)}
+                                        className="wise-primary-pill"
+                                        title="Prepare for this job"
                                     >
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                        <span>Match</span>
+                                        <Search className="w-3.5 h-3.5" />
+                                        <span>Prep</span>
                                     </button>
                                 </div>
                             </div>
@@ -348,9 +365,6 @@ const Jobs = () => {
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                         Search live opportunities
                     </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-                        Set your filters above, type one or more job titles, then click <strong>Find Matches</strong>.
-                    </p>
                 </div>
             )}
 
@@ -370,9 +384,6 @@ const Jobs = () => {
                                     {pastJobs.length} {pastJobs.length === 1 ? 'role' : 'roles'}
                                 </span>
                             </div>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                All roles recommended for your profile across scans and searches, including those not yet matched.
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -392,7 +403,7 @@ const Jobs = () => {
                         {pastJobs.map((job, idx) => (
                             <div
                                 key={job.url || `${job.title}-${idx}`}
-                                className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between group"
+                                className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
                             >
                                 <div className="space-y-3">
                                     {/* job title — clickable link to linkedin with arrow icon */}
@@ -410,19 +421,8 @@ const Jobs = () => {
                                     </h3>
 
                                     {/* company and location metadata */}
-                                    <div className="flex flex-wrap gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                        {job.company && (
-                                            <span className="inline-flex items-center gap-1">
-                                                <Building2 className="w-3 h-3 text-zinc-400" />
-                                                {job.company}
-                                            </span>
-                                        )}
-                                        {job.location && (
-                                            <span className="inline-flex items-center gap-1">
-                                                <MapPin className="w-3 h-3 text-zinc-400" />
-                                                {job.location}
-                                            </span>
-                                        )}
+                                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                        {[job.company, job.location].filter(Boolean).join(' · ')}
                                     </div>
 
                                     {/* snippet / description */}
@@ -435,36 +435,38 @@ const Jobs = () => {
 
                                 {/* card actions */}
                                 <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex gap-2">
-                                    <a
-                                        href={getLinkedInJobUrl(job)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
-                                        title="Open application page on LinkedIn"
-                                    >
-                                        <span>Apply on LinkedIn</span>
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </a>
+                                    {getLinkedInJobUrl(job) && (
+                                        <a
+                                            href={getLinkedInJobUrl(job)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="wise-primary-pill flex-1"
+                                            title="Open application page"
+                                        >
+                                            <span>Apply</span>
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
+                                    )}
 
                                     <button
                                         onClick={() => {
-                                            const added = saveJobToKanban(job);
-                                            if (added) addToast(`Added "${job.title}" to Tracker!`, "success");
-                                            else addToast(`"${job.title}" is already in your Tracker.`, "info");
+                                            saveJobToSavedJobs(job)
+                                                .then((added) => addToast(added ? `Added "${job.title}" to Saved Jobs!` : `Could not save "${job.title}".`, added ? "success" : "error"))
+                                                .catch(() => addToast("Could not save job.", "error"));
                                         }}
                                         className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                                        title="Track this application in Tracker"
+                                        title="Save this application"
                                     >
                                         <BookmarkPlus className="w-3.5 h-3.5" />
                                     </button>
 
                                     <button
-                                        onClick={() => navigate('/', { state: { targetJob: job } })}
-                                        className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all cursor-pointer"
-                                        title="Match this job with your resume on Home"
+                                        onClick={() => handlePrep(job)}
+                                        className="wise-primary-pill"
+                                        title="Prepare for this job"
                                     >
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                        <span>Match</span>
+                                        <Search className="w-3.5 h-3.5" />
+                                        <span>Prep</span>
                                     </button>
                                 </div>
                             </div>
@@ -473,9 +475,6 @@ const Jobs = () => {
                 ) : (
                     <div className="text-center py-10 px-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
                         <Briefcase className="w-7 h-7 text-zinc-400 mx-auto mb-2 opacity-60" />
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">
-                            No past recommendations recorded yet. When you search for opportunities or click <strong>Find Matching Jobs</strong> on the Home page, all recommended listings will appear here automatically.
-                        </p>
                     </div>
                 )}
             </div>

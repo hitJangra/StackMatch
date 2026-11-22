@@ -10,17 +10,16 @@ import { useTheme } from '../../theme/theme.context';
 import { useToast } from '../../../components/Toast';
 // icons
 import { 
-    User, 
     Mail, 
     Lock, 
     Eye, 
     EyeOff, 
     ArrowRight, 
-    Sparkles, 
     Sun, 
     Moon,
-    ShieldCheck
+    ArrowLeft
 } from 'lucide-react';
+import StackMatchLogo from '../../../components/StackMatchLogo';
 
 // registration view component
 const Register = () => {
@@ -35,12 +34,9 @@ const Register = () => {
     const { addToast } = useToast();
 
     // form input states
-    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     // form submit handler
@@ -49,7 +45,7 @@ const Register = () => {
         e.preventDefault();
 
         // validate all inputs
-        if (!username.trim() || !email.trim() || !password.trim()) {
+        if (!email.trim() || !password.trim()) {
             addToast("Please fill in all fields.", "warning");
             return;
         }
@@ -60,21 +56,16 @@ const Register = () => {
             return;
         }
 
-        // check password confirmation matches
-        if (password !== confirmPassword) {
-            addToast("Passwords do not match.", "warning");
-            return;
-        }
-
         // call registration handler
         setSubmitting(true);
-        const result = await handleRegister({ username, email, password });
+        const username = email.trim().split('@')[0] || 'stackmatch-user';
+        const result = await handleRegister({ username, email: email.trim(), password });
         setSubmitting(false);
 
         // handle response
         if (result?.success) {
             addToast("Account created successfully!", "success");
-            navigate("/"); // redirect to home
+            navigate("/home");
         } else {
             addToast(result?.message || "Registration failed. Please try again.", "error");
         }
@@ -82,17 +73,13 @@ const Register = () => {
 
     return (
         // registration page container
-        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden select-none">
-            {/* ambient decorative background glows */}
-            <div className="absolute top-1/4 -left-20 w-80 h-80 bg-zinc-300/40 dark:bg-zinc-800/30 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-zinc-400/20 dark:bg-zinc-700/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="auth-page">
 
             {/* light / dark mode toggle */}
             <div className="absolute top-6 right-6 z-20">
                 <button
                     onClick={toggleTheme}
-                    className="p-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md shadow-xs hover:bg-white dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-300 transition-all cursor-pointer"
+                    className="p-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 shadow-xs hover:bg-white dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
                     title="Toggle Theme"
                     type="button"
                 >
@@ -100,50 +87,25 @@ const Register = () => {
                 </button>
             </div>
 
+            <Link to="/" className="auth-back"><ArrowLeft size={16} /> Back to StackMatch</Link>
+
             {/* card container */}
             <div className="relative z-10 w-full max-w-md">
-                <div className="p-8 sm:p-10 rounded-2xl bg-white/75 dark:bg-zinc-900/65 backdrop-blur-xl border border-white/60 dark:border-zinc-800/80 shadow-2xl shadow-zinc-900/10 dark:shadow-black/60 ring-1 ring-black/5 dark:ring-white/10 space-y-6">
+                <div className="auth-card">
                     
                     {/* card branding and title */}
                     <div className="text-center space-y-2">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md mb-2">
-                            <Sparkles className="w-6 h-6" />
-                        </div>
+                        <StackMatchLogo compact />
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
                             Create an Account
                         </h1>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Get started with AI-powered resume screening and job discovery
+                            Create your StackMatch account
                         </p>
                     </div>
 
                     {/* signup form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* username input */}
-                        <div className="space-y-1.5">
-                            <label 
-                                htmlFor="username" 
-                                className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block"
-                            >
-                                Username
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                                    <User className="w-4 h-4" />
-                                </div>
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="yourusername"
-                                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
-                                    autoComplete="username"
-                                />
-                            </div>
-                        </div>
-
                         {/* email address input */}
                         <div className="space-y-1.5">
                             <label 
@@ -163,7 +125,7 @@ const Register = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="you@example.com"
-                                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
+                                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-colors shadow-xs"
                                     autoComplete="email"
                                 />
                             </div>
@@ -187,8 +149,8 @@ const Register = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Min. 6 characters"
-                                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
+                                    placeholder="At least 6 characters"
+                                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-colors shadow-xs"
                                     autoComplete="new-password"
                                 />
                                 {/* show / hide password toggle */}
@@ -203,51 +165,17 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* confirm password input */}
-                        <div className="space-y-1.5">
-                            <label 
-                                htmlFor="confirmPassword" 
-                                className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block"
-                            >
-                                Confirm Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                                    <Lock className="w-4 h-4" />
-                                </div>
-                                <input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Repeat password"
-                                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/60 dark:bg-zinc-950/50 backdrop-blur-xs text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:bg-white dark:focus:bg-zinc-950 transition-all shadow-xs"
-                                    autoComplete="new-password"
-                                />
-                                {/* toggle confirm password visibility */}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-                                    tabIndex={-1}
-                                >
-                                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                            </div>
-                        </div>
-
                         {/* submit registration button */}
                         <div className="pt-2">
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 font-medium text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
+                                className="wise-primary-pill w-full"
                             >
                                 {submitting ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                        <span>Creating account...</span>
+                                        <span>Creating account</span>
                                     </>
                                 ) : (
                                     <>
@@ -271,11 +199,6 @@ const Register = () => {
                             </Link>
                         </p>
 
-                        {/* security notice */}
-                        <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Protected by JWT and bcrypt encryption</span>
-                        </div>
                     </div>
 
                 </div>

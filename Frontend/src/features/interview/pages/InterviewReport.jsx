@@ -12,7 +12,6 @@ import {
     Code2, 
     Users, 
     Compass, 
-    Sparkles, 
     Calendar,
     Target,
     Layers,
@@ -23,11 +22,9 @@ import {
 // interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
 // loading spinner
-import Spinner from '../../../components/Spinner';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 // toast notifications
 import { useToast } from '../../../components/Toast';
-// helper for linkedin job urls
-import { getLinkedInJobUrl } from '../../../utils/linkedin';
 // Resume Keyword Heatmap component
 import ResumeKeywordHeatmap from '../components/ResumeKeywordHeatmap';
 
@@ -53,7 +50,7 @@ const NAV_ITEMS = [
     },
     { 
         id: 'roadmap', 
-        label: 'Preparation Road Map', 
+        label: 'Preparation', 
         icon: Compass,
         countKey: 'preparationPlan'
     },
@@ -65,7 +62,7 @@ const QuestionCard = ({ item, index }) => {
     const [open, setOpen] = useState(index === 0);
 
     return (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
+        <div className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
             <button
                 onClick={() => setOpen(prev => !prev)}
                 className="w-full text-left p-4 sm:p-5 flex items-start justify-between gap-4 cursor-pointer select-none"
@@ -86,8 +83,8 @@ const QuestionCard = ({ item, index }) => {
             {open && (
                 <div className="px-5 pb-5 pt-1 space-y-4 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in duration-200">
                     <div className="space-y-1.5 pt-3">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-                            Interviewer Intention
+                        <span className="wise-label">
+                            Intention
                         </span>
                         <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed pl-0.5">
                             {item.intention}
@@ -95,8 +92,8 @@ const QuestionCard = ({ item, index }) => {
                     </div>
 
                     <div className="space-y-1.5 pt-1">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-                            Model Answer Strategy
+                        <span className="wise-label">
+                            Answer
                         </span>
                         <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed pl-0.5 whitespace-pre-line">
                             {item.answer}
@@ -109,7 +106,7 @@ const QuestionCard = ({ item, index }) => {
 };
 
 // full interview report detail page
-const Interview = () => {
+const InterviewReport = () => {
     const [activeNav, setActiveNav] = useState('heatmap');
     const { report, getReportById, loading, getResumePdf } = useInterview();
     const { interviewId } = useParams();
@@ -140,10 +137,18 @@ const Interview = () => {
     };
 
     if (loading || !report) {
-        return <Spinner message="Loading your interview report..." />;
+        return <LoadingSpinner message="Loading report..." />;
     }
 
     const score = report.matchScore || 0;
+    const reportApplyUrl =
+        typeof report.jobUrl === "string" && report.jobUrl.startsWith("http") && report.jobUrl !== "#"
+            ? report.jobUrl
+            : typeof report.url === "string" && report.url.startsWith("http") && report.url !== "#"
+                ? report.url
+                : typeof report.applyLink === "string" && report.applyLink.startsWith("http")
+                    ? report.applyLink
+                    : "";
     const scoreColor = 
         score >= 80 ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500' :
         score >= 60 ? 'text-amber-600 dark:text-amber-400 border-amber-500' :
@@ -162,56 +167,59 @@ const Interview = () => {
     return (
         <div className="space-y-6 w-full animate-in fade-in duration-300">
             {/* page header and actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+            <div className="wise-page-header">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => navigate('/history')}
+                        onClick={() => navigate('/saved-jobs')}
                         className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-xs cursor-pointer"
-                        title="Back to History"
+                        title="Back to Saved Jobs"
                     >
                         <ArrowLeft className="w-4 h-4" />
                     </button>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                                <a
-                                    href={report.jobUrl || getLinkedInJobUrl(report.title || "Detailed Interview Strategy")}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
-                                    title="View & apply for this role on LinkedIn"
-                                >
+                                {reportApplyUrl ? (
+                                    <a
+                                        href={reportApplyUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors inline-flex items-center gap-1.5 group/title"
+                                        title="Open application"
+                                    >
+                                        <span>{report.title || "Detailed Interview Strategy"}</span>
+                                        <ArrowUpRight className="w-5 h-5 text-zinc-400 transition-all flex-shrink-0" />
+                                    </a>
+                                ) : (
                                     <span>{report.title || "Detailed Interview Strategy"}</span>
-                                    <ArrowUpRight className="w-5 h-5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
-                                </a>
+                                )}
                             </h1>
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${scoreBadgeBg}`}>
                                 {score}% Match
                             </span>
                         </div>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            AI-evaluated interview plan, ATS keyword density, questions, and personalized roadmap.
-                        </p>
                     </div>
                 </div>
 
                 {/* action buttons */}
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <a
-                        href={report.jobUrl || getLinkedInJobUrl(report.title || "Target Position")}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all cursor-pointer"
-                        title="Open job on LinkedIn"
-                    >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Apply Now</span>
-                    </a>
+                    {reportApplyUrl && (
+                        <a
+                            href={reportApplyUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wise-primary-pill"
+                            title="Open application"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Apply</span>
+                        </a>
+                    )}
 
                     <button
                         onClick={handleDownloadResume}
                         disabled={downloading}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                        className="wise-secondary-pill"
                     >
                         <Download className="w-3.5 h-3.5" />
                         <span>{downloading ? "Generating PDF..." : "Download Tailored Resume"}</span>
@@ -326,7 +334,7 @@ const Interview = () => {
                                     <div key={day.day} className="relative space-y-2">
                                         <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-indigo-600 bg-white dark:bg-zinc-900" />
                                         
-                                        <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-2">
+                                        <div className="interactive-card p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-2">
                                             <div className="flex items-center justify-between">
                                                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
                                                     Day {day.day}
@@ -355,7 +363,7 @@ const Interview = () => {
                 {/* right column: match score & skill gaps */}
                 <div className="lg:col-span-3 space-y-5">
                     {/* circular score card */}
-                    <div className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4 text-center">
+                    <div className="interactive-card p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4 text-center">
                         <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold block text-left">
                             Match Score
                         </span>
@@ -374,7 +382,7 @@ const Interview = () => {
                     </div>
 
                     {/* missing skills badges */}
-                    <div className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
+                    <div className="interactive-card p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
                         <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold block">
                             Identified Skill Gaps
                         </span>
@@ -413,4 +421,4 @@ const Interview = () => {
     );
 };
 
-export default Interview;
+export default InterviewReport;

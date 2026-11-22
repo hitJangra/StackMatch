@@ -6,47 +6,60 @@ const ThemeContext = createContext();
 
 // theme provider component managing light/dark mode
 export const ThemeProvider = ({ children }) => {
-    // initialize theme from localstorage or system preference
-    // also apply the class synchronously here before the first paint
-    // to avoid a light flash on reload when dark mode is preferred
-    const [theme, setTheme] = useState(() => {
+    const [theme, setThemeState] = useState(() => {
         const saved = localStorage.getItem('theme');
-        const resolved =
-            saved === 'light' || saved === 'dark'
-                ? saved
-                : window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light';
-        // apply immediately — before first render paints to the screen
-        if (resolved === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        return resolved;
+        return saved === 'light' || saved === 'dark' || saved === 'system'
+            ? saved
+            : 'system';
     });
+    const [resolvedTheme, setResolvedTheme] = useState(() =>
+        (theme === 'system')
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : theme
+    );
 
-    // keep useEffect only for subsequent toggles after mount
+    const applyTheme = (mode) => {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const resolved = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode;
+        document.documentElement.classList.toggle('dark', resolved === 'dark');
+        document.documentElement.dataset.mode = resolved;
+        document.documentElement.dataset.theme = mode;
+        setResolvedTheme(resolved);
+    };
+
     useEffect(() => {
-        const root = document.documentElement;
-        // toggle tailwind 'dark' class
-        if (theme === 'dark') {
-            root.classList.add('dark');
+        applyTheme(theme);
+        if (theme === 'system') {
+            localStorage.removeItem('theme');
         } else {
-            root.classList.remove('dark');
+            localStorage.setItem('theme', theme);
         }
-        // persist choice in localstorage
-        localStorage.setItem('theme', theme);
+
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleSystemChange = () => {
+            if (theme === 'system') applyTheme('system');
+        };
+        media.addEventListener?.('change', handleSystemChange);
+        return () => media.removeEventListener?.('change', handleSystemChange);
     }, [theme]);
 
-    // toggle between light and dark
+    const setTheme = (mode) => {
+        if (mode === 'light' || mode === 'dark' || mode === 'system') {
+            setThemeState(mode);
+        }
+    };
+
     const toggleTheme = () => {
-        setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+        setThemeState((current) => {
+            const resolved = current === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : current;
+            return resolved === 'light' ? 'dark' : 'light';
+        });
     };
 
     return (
-        // expose theme and toggleTheme helper
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );

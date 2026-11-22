@@ -201,12 +201,6 @@ export const getRecommendedJobs = async (keywords, filters = {}) => {
     return response.data;
 };
 
-// fetch scan history list
-export const getHistory = async () => {
-    const response = await api.get("/api/history");
-    return response.data;
-};
-
 // localstorage key for persisting past recommended jobs
 export const PAST_JOBS_STORAGE_KEY = "past_recommended_jobs";
 
@@ -255,3 +249,23 @@ export const getPastRecommendations = async () => {
         return { success: false, jobs: [] };
     }
 };
+
+export async function getSavedJobs() {
+    const response = await api.get("/api/saved-jobs");
+    return response.data;
+}
+
+export async function createSavedJob(job) {
+    const response = await api.post("/api/saved-jobs", job);
+    return response.data;
+}
+
+export async function updateSavedJob(id, updates) {
+    const response = await api.patch(`/api/saved-jobs/${id}`, updates);
+    return response.data;
+}
+
+export async function deleteSavedJob(id) {
+    const response = await api.delete(`/api/saved-jobs/${id}`);
+    return response.data;
+}

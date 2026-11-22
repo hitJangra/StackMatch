@@ -6,8 +6,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 // global base styles
 import "./index.css"
-// app theme and utility styles
-import "./style.scss"
 
 // mount react application into dom root div
 createRoot(document.getElementById('root')).render(
