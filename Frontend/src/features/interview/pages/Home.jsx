@@ -1,5 +1,5 @@
 // react hooks
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 // navigation hook
 import { useNavigate, useLocation } from 'react-router';
@@ -36,10 +36,9 @@ const Home = () => {
     const { loading, generateReport, reports, getReports } = useInterview();
     // job description textarea input
     const [jobDescription, setJobDescription] = useState("");
-    // selected resume filename display
-    const [selectedFileName, setSelectedFileName] = useState("");
-    // hidden file input ref
-    const resumeInputRef = useRef();
+    // The actual uploaded PDF is retained across both Home modes.
+    const [resumeFile, setResumeFile] = useState(null);
+    const selectedFileName = resumeFile?.name || "";
 
     // recommended jobs state
     const [recommendedJobs, setRecommendedJobs] = useState([]);
@@ -69,17 +68,33 @@ const Home = () => {
         }
     }, [location.state]);
 
-    // handle resume file selection
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) setSelectedFileName(file.name);
-        else setSelectedFileName("");
+    const setResumeFromFile = (file) => {
+        if (!file) {
+            setResumeFile(null);
+            return;
+        }
+        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+            addToast("Please select a PDF resume.", "warning");
+            return;
+        }
+        if (file.size > 3 * 1024 * 1024) {
+            addToast("Resume file must be 3MB or smaller.", "warning");
+            return;
+        }
+        setResumeFile(file);
+    };
+
+    const handleFileChange = (event) => {
+        setResumeFromFile(event.target.files?.[0] || null);
+    };
+
+    const handleFileDrop = (event) => {
+        event.preventDefault();
+        setResumeFromFile(event.dataTransfer.files?.[0] || null);
     };
 
     // submit resume and job description for full interview report
     const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current?.files[0];
-
         // check required inputs
         if (!resumeFile) {
             addToast("Please upload a resume PDF file.", "warning");
@@ -106,8 +121,6 @@ const Home = () => {
 
     // automatically extract keywords from resume and scrape matching jobs
     const handleAutoAnalyze = async () => {
-        const resumeFile = resumeInputRef.current?.files[0];
-
         if (!resumeFile) {
             addToast("Please upload your resume PDF first.", "warning");
             return;
@@ -165,10 +178,12 @@ const Home = () => {
 
     // one-click match a recommended job to the uploaded resume
     const handleMatchToJob = async (jobDesc, cardUrl) => {
-        const resumeFile = resumeInputRef.current?.files[0];
-
         if (!resumeFile) {
             addToast("Please upload a resume first.", "warning");
+            return;
+        }
+        if (resumeFile.size > 3 * 1024 * 1024) {
+            addToast("Resume file must be 3MB or smaller.", "warning");
             return;
         }
 
@@ -260,10 +275,11 @@ const Home = () => {
                                 layout
                                 htmlFor="resume-upload"
                                 className={`home-upload-box ${selectedFileName ? "home-upload-box-selected" : ""}`}
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={handleFileDrop}
                                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
                             >
                                 <input
-                                    ref={resumeInputRef}
                                     id="resume-upload"
                                     type="file"
                                     accept=".pdf"
@@ -307,9 +323,10 @@ const Home = () => {
                                 <label
                                     htmlFor="resume-upload"
                                     className={`home-upload-box home-upload-box-compact ${selectedFileName ? "home-upload-box-selected" : ""}`}
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={handleFileDrop}
                                 >
                                     <input
-                                        ref={resumeInputRef}
                                         id="resume-upload"
                                         type="file"
                                         accept=".pdf"
