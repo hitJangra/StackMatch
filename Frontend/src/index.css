@@ -639,6 +639,12 @@ textarea:focus-visible {
 .desktop-sidebar {
   width: 264px;
   flex: 0 0 264px;
+  transition: width 220ms ease-out, flex-basis 220ms ease-out;
+}
+
+.desktop-sidebar-collapsed {
+  width: 72px;
+  flex-basis: 72px;
 }
 
 .app-sidebar {
@@ -651,6 +657,14 @@ textarea:focus-visible {
   padding: var(--space-lg) var(--space-md);
   border-right: 1px solid var(--color-rule);
   background: var(--color-card);
+  width: 264px;
+  transition: width 220ms ease-out, padding 220ms ease-out;
+}
+
+.desktop-sidebar-collapsed .app-sidebar {
+  width: 72px;
+  padding-inline: 8px;
+  overflow: visible;
 }
 
 .sidebar-brand {
@@ -664,6 +678,39 @@ textarea:focus-visible {
 
 .sidebar-brand a {
   text-decoration: none;
+}
+
+.desktop-sidebar-toggle {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-rule);
+  border-radius: 50%;
+  background: var(--color-card);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: transform 120ms ease-out, background-color 220ms ease-out;
+}
+
+.desktop-sidebar-toggle:hover {
+  transform: scale(1.04);
+  background: var(--color-paper-2);
+}
+
+.desktop-sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.desktop-sidebar-collapsed .sidebar-brand > a {
+  display: none;
+}
+
+.desktop-sidebar-collapsed .desktop-sidebar-toggle {
+  margin: 0;
 }
 
 .drawer-close {
@@ -685,6 +732,19 @@ textarea:focus-visible {
   color: var(--color-accent-ink);
 }
 
+.desktop-sidebar-collapsed .sidebar-new {
+  width: 44px;
+  min-width: 44px;
+  margin-inline: auto;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+.desktop-sidebar-collapsed .sidebar-new span,
+.desktop-sidebar-collapsed .sidebar-link span {
+  display: none;
+}
+
 .sidebar-nav {
   display: grid;
   gap: 4px;
@@ -702,6 +762,41 @@ textarea:focus-visible {
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
+  position: relative;
+}
+
+.desktop-sidebar-collapsed .sidebar-link {
+  width: 44px;
+  margin-inline: auto;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.desktop-sidebar-collapsed .sidebar-link::after,
+.desktop-sidebar-collapsed .sidebar-new::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 200;
+  padding: 6px 8px;
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-4px, -50%);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.desktop-sidebar-collapsed .sidebar-link:hover::after,
+.desktop-sidebar-collapsed .sidebar-new:hover::after {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
 .sidebar-link:hover {
@@ -1469,6 +1564,10 @@ textarea:focus-visible {
     --gutter: 24px;
   }
 
+  .desktop-sidebar-toggle {
+    display: none;
+  }
+
   .desktop-sidebar {
     display: none;
   }
@@ -1514,6 +1613,7 @@ textarea:focus-visible {
 
   .mobile-drawer .app-sidebar {
     width: 100%;
+    padding: var(--space-lg) var(--space-md);
   }
 
   .landing-nav,

@@ -12,7 +12,9 @@ import {
     X,
     Plus,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    PanelLeftClose,
+    PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useTheme } from '../features/theme/theme.context';
@@ -32,7 +34,18 @@ const AppLayout = () => {
     const location = useLocation();
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+        return localStorage.getItem('stackmatch_sidebar_collapsed') === 'true';
+    });
     const profileRef = useRef(null);
+
+    const toggleDesktopSidebar = () => {
+        setDesktopCollapsed((collapsed) => {
+            const next = !collapsed;
+            localStorage.setItem('stackmatch_sidebar_collapsed', String(next));
+            return next;
+        });
+    };
 
     useEffect(() => {
         setDrawerOpen(false);
@@ -79,13 +92,27 @@ const AppLayout = () => {
                     <NavLink to="/home" aria-label="StackMatch home">
                         <StackMatchLogo />
                     </NavLink>
+                    <button
+                        type="button"
+                        className="desktop-sidebar-toggle"
+                        onClick={toggleDesktopSidebar}
+                        aria-label={desktopCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        title={desktopCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        {desktopCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                    </button>
                     <button type="button" className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Close navigation">
                         <X size={20} />
                     </button>
                 </div>
-                <button type="button" className="btn sidebar-new" onClick={() => navigate('/home')}>
+                <button
+                    type="button"
+                    className="btn sidebar-new"
+                    onClick={() => navigate('/home')}
+                    title={desktopCollapsed ? 'New match' : undefined}
+                >
                     <Plus size={16} />
-                    New match
+                    <span>New match</span>
                 </button>
                 <nav className="sidebar-nav">
                     {navItems.map((item) => {
@@ -98,6 +125,7 @@ const AppLayout = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
+                                title={desktopCollapsed ? item.label : undefined}
                             >
                                 <Icon size={18} />
                                 <span>{item.label}</span>
@@ -111,7 +139,7 @@ const AppLayout = () => {
 
     return (
         <div className="app-shell">
-            <div className="desktop-sidebar">{sidebar}</div>
+            <div className={`desktop-sidebar ${desktopCollapsed ? 'desktop-sidebar-collapsed' : ''}`}>{sidebar}</div>
             {drawerOpen && (
                 <button
                     type="button"
