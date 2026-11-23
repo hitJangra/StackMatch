@@ -16,6 +16,7 @@ export function clearUserSpecificState() {
         })
         if (theme) localStorage.setItem("theme", theme)
         sessionStorage.clear()
+        window.dispatchEvent(new Event("stackmatch-clear-resume"))
     } catch (error) {
         console.error("Failed to clear user-specific state:", error)
     }

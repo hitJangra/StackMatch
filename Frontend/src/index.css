@@ -1038,6 +1038,42 @@ textarea:focus-visible {
   font-size: 12px;
 }
 
+.home-upload-change {
+  margin-top: var(--space-xs);
+  color: var(--color-forest);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:root[data-mode="dark"] .home-upload-change {
+  color: var(--color-accent);
+}
+
+.home-save-bookmark {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-rule);
+  border-radius: 50%;
+  background: var(--color-card);
+  color: var(--color-ink-2);
+  cursor: pointer;
+  transition: transform 120ms ease-out, border-color 200ms ease-out, background-color 200ms ease-out;
+}
+
+.home-save-bookmark:hover,
+.home-save-bookmark-active {
+  transform: scale(1.04);
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-card));
+  color: var(--color-forest);
+}
+
 .home-glass-panel {
   background: color-mix(in srgb, var(--color-card) 82%, transparent);
   -webkit-backdrop-filter: blur(12px);

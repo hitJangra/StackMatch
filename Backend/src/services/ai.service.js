@@ -27,6 +27,7 @@ function parseAiJson(rawText) {
 
 // zod schema for interview report structure
 const interviewReportSchema = z.object({
+    jdKeywords: z.array(z.string()).min(10).max(20).describe("10-20 concise hard skills or role competencies extracted from the job description"),
     // match score between 0 and 100
     matchScore: z.number().describe("A score between 0 and 100 indicating how well the candidate's profile matches the job description"),
     // technical interview questions
@@ -54,6 +55,41 @@ const interviewReportSchema = z.object({
     })).describe("A day-wise preparation plan for the candidate to follow in order to prepare for the interview effectively"),
     // target position title
     title: z.string().describe("The title of the job for which the interview report is generated"),
+    tailoredResume: z.object({
+        name: z.string(),
+        contact: z.object({
+            email: z.string().optional().default(""),
+            phone: z.string().optional().default(""),
+            location: z.string().optional().default(""),
+            linkedin: z.string().optional().default(""),
+            website: z.string().optional().default("")
+        }),
+        summary: z.string(),
+        education: z.array(z.object({
+            institution: z.string(),
+            degree: z.string(),
+            location: z.string().optional().default(""),
+            dates: z.string().optional().default(""),
+            details: z.array(z.string()).optional().default([])
+        })),
+        experience: z.array(z.object({
+            title: z.string(),
+            organization: z.string(),
+            location: z.string().optional().default(""),
+            dates: z.string().optional().default(""),
+            bullets: z.array(z.string())
+        })),
+        projects: z.array(z.object({
+            name: z.string(),
+            technologies: z.array(z.string()).optional().default([]),
+            dates: z.string().optional().default(""),
+            bullets: z.array(z.string())
+        })),
+        skills: z.array(z.object({
+            category: z.string(),
+            items: z.array(z.string())
+        }))
+    }).describe("Structured, truthful tailored resume using real candidate details; tailor only summary and bullet points")
 })
 
 // zod schema for extracting 3 job search keywords
@@ -89,7 +125,7 @@ async function callOpenAiChatCompletion({ prompt, apiKey, model, schemaDescripti
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert technical recruiter and interview strategist. You must strictly output only a valid JSON object matching this schema description:\n${schemaDescription}`
+                    content: `You are an expert cross-industry recruiter and interview strategist. You must strictly output only a valid JSON object matching this schema description:\n${schemaDescription}`
                 },
                 {
                     role: "user",
@@ -135,7 +171,7 @@ async function callGroqChatCompletion({ prompt, apiKey, model, schemaDescription
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert technical recruiter and interview strategist. You must strictly output only a valid JSON object with no markdown fences, matching this schema:\n${schemaDescription}`
+                    content: `You are an expert cross-industry recruiter and interview strategist. You must strictly output only a valid JSON object with no markdown fences, matching this schema:\n${schemaDescription}`
                 },
                 {
                     role: "user",
@@ -160,10 +196,18 @@ async function callGroqChatCompletion({ prompt, apiKey, model, schemaDescription
 
 // generate interview preparation report
 async function generateInterviewReport({ resume, jobDescription, customApiKey, aiProvider = 'default', aiModel }) {
-    // construct prompt string without redundant self-description
-    const prompt = `Generate an interview report for a candidate with the following details:
+    // construct domain-agnostic prompt
+    const prompt = `Generate an interview report for a candidate applying to any profession or industry.
 Resume: ${resume}
 Job Description: ${jobDescription}
+
+Rules:
+- Adapt questions and preparation to the actual profession and industry. Do not assume software engineering.
+- Extract 10-20 concise 1-3 word hard skills or role competencies into jdKeywords.
+- Return tailoredResume using only truthful candidate details found in the resume.
+- Tailor only the professional summary and project/experience bullet points to the target job.
+- Do not invent degrees, employers, contact details, metrics, certifications, or projects.
+- Keep every section suitable for a clean single-column ATS resume.
 `
 
     // expected json schema text for prompt
@@ -171,6 +215,16 @@ Job Description: ${jobDescription}
 {
   "matchScore": number (0-100),
   "title": string (target job title),
+  "jdKeywords": [string],
+  "tailoredResume": {
+    "name": string,
+    "contact": {"email": string, "phone": string, "location": string, "linkedin": string, "website": string},
+    "summary": string,
+    "education": [{"institution": string, "degree": string, "location": string, "dates": string, "details": [string]}],
+    "experience": [{"title": string, "organization": string, "location": string, "dates": string, "bullets": [string]}],
+    "projects": [{"name": string, "technologies": [string], "dates": string, "bullets": [string]}],
+    "skills": [{"category": string, "items": [string]}]
+  },
   "technicalQuestions": [ { "question": string, "intention": string, "answer": string } ],
   "behavioralQuestions": [ { "question": string, "intention": string, "answer": string } ],
   "skillGaps": [ { "skill": string, "severity": "low" | "medium" | "high" } ],

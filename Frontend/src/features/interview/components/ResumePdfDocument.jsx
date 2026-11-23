@@ -1,5 +1,6 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import resumeTemplate from "../../../assets/resume-template.tex?raw";
 
 // Clean, ATS-compliant, monochromatic styling
 const styles = StyleSheet.create({
@@ -224,8 +225,121 @@ export const ResumePdfDocument = ({ report }) => {
     );
 };
 
+export const TailoredResumePdfDocument = ({ report }) => {
+    const resume = report?.tailoredResume;
+    const contact = resume?.contact || {};
+    const contactParts = [
+        contact.email,
+        contact.phone,
+        contact.location,
+        contact.linkedin,
+        contact.website
+    ].filter(Boolean);
+
+    const education = Array.isArray(resume?.education) ? resume.education : [];
+    const experience = Array.isArray(resume?.experience) ? resume.experience : [];
+    const projects = Array.isArray(resume?.projects) ? resume.projects : [];
+    const skills = Array.isArray(resume?.skills) ? resume.skills : [];
+
+    return (
+        <Document title={`${resume?.name || "Candidate"}_Tailored_Resume`}>
+            <Page size="A4" style={styles.page}>
+                <View style={styles.header}>
+                    <Text style={styles.candidateName}>{resume?.name || "Candidate"}</Text>
+                    {contactParts.length > 0 && (
+                        <Text style={styles.roleTitle}>{contactParts.join(" | ")}</Text>
+                    )}
+                </View>
+
+                {resume?.summary && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Summary</Text>
+                        <Text style={styles.paragraph}>{resume.summary}</Text>
+                    </View>
+                )}
+
+                {education.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Education</Text>
+                        {education.map((item, index) => (
+                            <View key={index} style={styles.itemBlock}>
+                                <View style={styles.itemHeader}>
+                                    <Text style={styles.itemTitle}>{item.institution}</Text>
+                                    <Text style={styles.itemSubtitle}>{item.dates}</Text>
+                                </View>
+                                {item.degree && <Text style={styles.itemSubtitle}>{item.degree}{item.location ? ` | ${item.location}` : ""}</Text>}
+                                {(item.details || []).map((detail, detailIndex) => (
+                                    <View key={detailIndex} style={styles.bulletPoint}>
+                                        <Text style={styles.bulletDot}>-</Text>
+                                        <Text style={styles.bulletText}>{detail}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {experience.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Experience</Text>
+                        {experience.map((item, index) => (
+                            <View key={index} style={styles.itemBlock}>
+                                <View style={styles.itemHeader}>
+                                    <Text style={styles.itemTitle}>{item.title}</Text>
+                                    <Text style={styles.itemSubtitle}>{item.dates}</Text>
+                                </View>
+                                <Text style={styles.itemSubtitle}>{item.organization}{item.location ? ` | ${item.location}` : ""}</Text>
+                                {(item.bullets || []).map((bullet, bulletIndex) => (
+                                    <View key={bulletIndex} style={styles.bulletPoint}>
+                                        <Text style={styles.bulletDot}>-</Text>
+                                        <Text style={styles.bulletText}>{bullet}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {projects.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Projects</Text>
+                        {projects.map((item, index) => (
+                            <View key={index} style={styles.itemBlock}>
+                                <View style={styles.itemHeader}>
+                                    <Text style={styles.itemTitle}>{item.name}</Text>
+                                    <Text style={styles.itemSubtitle}>{item.dates}</Text>
+                                </View>
+                                {item.technologies?.length > 0 && (
+                                    <Text style={styles.itemSubtitle}>{item.technologies.join(", ")}</Text>
+                                )}
+                                {(item.bullets || []).map((bullet, bulletIndex) => (
+                                    <View key={bulletIndex} style={styles.bulletPoint}>
+                                        <Text style={styles.bulletDot}>-</Text>
+                                        <Text style={styles.bulletText}>{bullet}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {skills.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Skills</Text>
+                        {skills.map((group, index) => (
+                            <Text key={index} style={styles.paragraph}>
+                                {group.category}: {(group.items || []).join(", ")}
+                            </Text>
+                        ))}
+                    </View>
+                )}
+            </Page>
+        </Document>
+    );
+};
+
 // Client-side helper to render and trigger instant PDF download
-export const downloadClientResumePdf = async (report) => {
+export const downloadPrepRoadmapPdf = async (report) => {
     try {
         const doc = <ResumePdfDocument report={report} />;
         const blob = await pdf(doc).toBlob();
@@ -233,7 +347,7 @@ export const downloadClientResumePdf = async (report) => {
         const link = document.createElement("a");
         link.href = url;
         const safeTitle = (report?.title || "Tailored_Resume").replace(/[^a-zA-Z0-9_-]/g, "_");
-        link.download = `${safeTitle}_ATS_Report.pdf`;
+        link.download = `${safeTitle}_Prep_Roadmap.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -243,6 +357,128 @@ export const downloadClientResumePdf = async (report) => {
         console.error("Client-side PDF generation failed:", err);
         throw err;
     }
+};
+
+export const downloadTailoredResumePdf = async (report) => {
+    const resume = report?.tailoredResume;
+    if (!resume) {
+        throw new Error("Tailored resume data is not available.");
+    }
+    try {
+        const doc = <TailoredResumePdfDocument report={report} />;
+        const blob = await pdf(doc).toBlob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        const safeName = (resume.name || report?.title || "Tailored_Resume").replace(/[^a-zA-Z0-9_-]/g, "_");
+        link.download = `${safeName}_Tailored_Resume.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return true;
+    } catch (err) {
+        console.error("Tailored resume PDF generation failed:", err);
+        throw err;
+    }
+};
+
+export const downloadClientResumePdf = downloadPrepRoadmapPdf;
+
+const escapeLatex = (value = "") =>
+    String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/([&#_%{}])/g, "\\$1")
+        .replace(/~/g, "\\textasciitilde{}")
+        .replace(/\^/g, "\\textasciicircum{}");
+
+export const downloadTailoredTexResume = (report) => {
+    const resume = report?.tailoredResume;
+    if (!resume) throw new Error("Tailored resume data is not available.");
+
+    const contact = resume.contact || {};
+    const contactLines = [
+        contact.phone,
+        contact.email ? `\\href{mailto:${escapeLatex(contact.email)}}{\\underline{${escapeLatex(contact.email)}}}` : "",
+        contact.linkedin ? `\\href{${escapeLatex(contact.linkedin)}}{\\underline{${escapeLatex(contact.linkedin)}}}` : "",
+        contact.website ? `\\href{${escapeLatex(contact.website)}}{\\underline{${escapeLatex(contact.website)}}}` : ""
+    ].filter(Boolean);
+
+    const education = (resume.education || []).map((item) => `
+    \\resumeSubheading
+      {${escapeLatex(item.institution)}}{${escapeLatex(item.location || "")}}
+      {${escapeLatex(item.degree)}}{${escapeLatex(item.dates || "")}}
+    ${(item.details || []).map(detail => `      \\resumeItem{${escapeLatex(detail)}}`).join("\n")}
+`).join("\n");
+
+    const experience = (resume.experience || []).map((item) => `
+    \\resumeSubheading
+      {${escapeLatex(item.title)}}{${escapeLatex(item.organization)}}
+      {${escapeLatex(item.organization)}}{${escapeLatex([item.location, item.dates].filter(Boolean).join(" | "))}}
+      \\resumeItemListStart
+${(item.bullets || []).map(bullet => `        \\resumeItem{${escapeLatex(bullet)}}`).join("\n")}
+      \\resumeItemListEnd
+`).join("\n");
+
+    const projects = (resume.projects || []).map((item) => `
+      \\resumeProjectHeading
+          {\\textbf{${escapeLatex(item.name)}}${item.technologies?.length ? ` $|$ \\emph{${escapeLatex(item.technologies.join(", "))}}` : ""}}{${escapeLatex(item.dates || "")}}
+          \\resumeItemListStart
+${(item.bullets || []).map(bullet => `            \\resumeItem{${escapeLatex(bullet)}}`).join("\n")}
+          \\resumeItemListEnd
+`).join("\n");
+
+    const skills = (resume.skills || []).map((group) =>
+        `     \\textbf{${escapeLatex(group.category)}}{: ${escapeLatex((group.items || []).join(", "))}} \\\\`
+    ).join("\n");
+
+    const body = `
+\\begin{document}
+
+\\begin{center}
+    \\textbf{\\Huge \\scshape ${escapeLatex(resume.name || "Candidate")} } \\\\ \\vspace{1pt}
+    \\small ${contactLines.join(" $|$ ")}
+${contact.location ? ` $|$ ${escapeLatex(contact.location)}` : ""}
+\\end{center}
+
+${resume.summary ? `\\section{Summary}\\small{${escapeLatex(resume.summary)}}` : ""}
+
+${education ? `\\section{Education}
+  \\resumeSubHeadingListStart
+${education}
+  \\resumeSubHeadingListEnd` : ""}
+
+${experience ? `\\section{Experience}
+  \\resumeSubHeadingListStart
+${experience}
+  \\resumeSubHeadingListEnd` : ""}
+
+${projects ? `\\section{Projects}
+    \\resumeSubHeadingListStart
+${projects}
+    \\resumeSubHeadingListEnd` : ""}
+
+${skills ? `\\section{Skills}
+ \\begin{itemize}[leftmargin=0.15in, label={}]
+    \\small{\\item{
+${skills}
+    }}
+ \\end{itemize}` : ""}
+
+\\end{document}`;
+
+    const preambleEnd = resumeTemplate.indexOf("\\begin{document}");
+    const tex = (preambleEnd >= 0 ? resumeTemplate.slice(0, preambleEnd) : resumeTemplate) + body;
+    const blob = new Blob([tex], { type: "application/x-tex;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeName = (resume.name || report?.title || "Tailored_Resume").replace(/[^a-zA-Z0-9_-]/g, "_");
+    link.download = `${safeName}_Tailored_Resume.tex`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 };
 
 export default ResumePdfDocument;

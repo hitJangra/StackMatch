@@ -65,6 +65,16 @@ Use this exact JSON schema:
 {
   "title": "Target Role Title",
   "matchScore": 85,
+  "jdKeywords": ["string"],
+  "tailoredResume": {
+    "name": "Candidate name",
+    "contact": {"email": "", "phone": "", "location": "", "linkedin": "", "website": ""},
+    "summary": "Targeted summary",
+    "education": [],
+    "experience": [],
+    "projects": [],
+    "skills": []
+  },
   "technicalQuestions": [
     { "question": "Detailed technical scenario question 1", "intention": "Why the interviewer asks this question", "answer": "Structured model answer strategy with key concepts" },
     { "question": "Detailed technical scenario question 2", "intention": "Why the interviewer asks this question", "answer": "Structured model answer strategy with key concepts" },
@@ -111,6 +121,8 @@ Use this exact JSON schema:
         createdAt: new Date().toISOString(),
         matchScore: typeof parsed.matchScore === "number" ? parsed.matchScore : 80,
         jobDescription: jobDescription || "",
+        jdKeywords: Array.isArray(parsed.jdKeywords) ? parsed.jdKeywords : [],
+        tailoredResume: parsed.tailoredResume || null,
         technicalQuestions: Array.isArray(parsed.technicalQuestions) ? parsed.technicalQuestions : [],
         behavioralQuestions: Array.isArray(parsed.behavioralQuestions) ? parsed.behavioralQuestions : [],
         skillGaps: Array.isArray(parsed.skillGaps) ? parsed.skillGaps : [],

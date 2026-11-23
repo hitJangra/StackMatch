@@ -1,5 +1,5 @@
 // react context and state
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 
 // interview context instance
 export const InterviewContext = createContext()
@@ -12,10 +12,18 @@ export const InterviewProvider = ({ children }) => {
     const [report, setReport] = useState(null)
     // list of all past reports
     const [reports, setReports] = useState([])
+    // actual uploaded resume shared across Home and Saved Jobs Prep
+    const [resumeFile, setResumeFile] = useState(null)
+
+    useEffect(() => {
+        const clearResume = () => setResumeFile(null)
+        window.addEventListener("stackmatch-clear-resume", clearResume)
+        return () => window.removeEventListener("stackmatch-clear-resume", clearResume)
+    }, [])
 
     return (
         // expose state and setters to child components
-        <InterviewContext.Provider value={{ loading, setLoading, report, setReport, reports, setReports }}>
+        <InterviewContext.Provider value={{ loading, setLoading, report, setReport, reports, setReports, resumeFile, setResumeFile }}>
             {children}
         </InterviewContext.Provider>
     )

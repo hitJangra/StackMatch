@@ -6,7 +6,7 @@ import { CheckCircle2, AlertTriangle, Search, Filter, Hash, Layers } from 'lucid
  * Benchmarks extracted keywords from the Job Description against the Candidate Resume.
  * Visually categorizes keywords into Matched (Green) and Missing (Amber/Rose).
  */
-export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", skillGaps = [] }) => {
+export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", skillGaps = [], jdKeywords = [] }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all"); // 'all' | 'matched' | 'missing'
     const [selectedKeyword, setSelectedKeyword] = useState(null);
@@ -16,78 +16,65 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
         const jd = (jobDescription || "").toLowerCase();
         const res = (resumeText || "").toLowerCase();
 
-        // Common stopwords to ignore
-        const stopWords = new Set([
-            "with", "and", "the", "for", "that", "this", "from", "have", "will", "your",
-            "experience", "years", "skills", "ability", "working", "team", "role", "work",
-            "strong", "knowledge", "responsibilities", "requirements", "about", "candidate",
-            "preferred", "plus", "degree", "qualified", "looking", "must", "understanding"
-        ]);
-
-        // Known tech terms & phrases dictionary to prioritize
+        // Expanded catalog of real technical, framework, cloud & domain skills
         const standardTechCatalog = [
-            "react", "react.js", "next.js", "typescript", "javascript", "node.js", "express",
-            "python", "django", "fastapi", "flask", "java", "spring boot", "c++", "c#", ".net",
-            "golang", "rust", "aws", "gcp", "azure", "docker", "kubernetes", "ci/cd", "terraform",
-            "sql", "postgresql", "mysql", "mongodb", "redis", "elasticsearch", "graphql", "rest api",
-            "system design", "microservices", "kafka", "rabbitmq", "git", "linux", "html5", "css3",
-            "tailwind", "sass", "redux", "zustand", "jest", "cypress", "unit testing", "agile", "scrum"
+            "react", "react.js", "next.js", "vue", "angular", "svelte", "typescript", "javascript",
+            "node.js", "express", "nestjs", "python", "django", "fastapi", "flask", "java",
+            "spring boot", "c++", "c#", ".net", "asp.net core", "entity framework", "web api",
+            "golang", "rust", "php", "laravel", "ruby", "rails", "swift", "kotlin", "flutter",
+            "aws", "gcp", "azure", "vercel", "fly.io", "docker", "kubernetes", "ci/cd", "terraform",
+            "sql", "postgres", "postgresql", "sql server", "mysql", "supabase", "mongodb", "redis",
+            "elasticsearch", "graphql", "rest api", "system design", "microservices", "kafka",
+            "rabbitmq", "git", "linux", "html5", "css3", "tailwind", "shadcn", "sass", "redux",
+            "zustand", "jest", "cypress", "playwright", "unit testing", "agile", "scrum",
+            "dbt", "airbyte", "langgraph", "langchain", "openai", "anthropic", "gemini",
+            "machine learning", "nlp", "rag", "devops", "mlops"
         ];
 
-        // 1. Gather keywords from skill gaps explicitly identified by AI
+        // Boundary-safe regex so terms with special chars (C++, C#, .NET, Node.js) match cleanly
+        const makeSafeRegex = (term) => {
+            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'gi');
+        };
+
+        // 1. Gather concise skill-gap terms from AI (skip long full-sentence gaps)
         const gapSkills = new Map();
         if (Array.isArray(skillGaps)) {
             skillGaps.forEach(g => {
                 if (g && g.skill) {
-                    gapSkills.set(g.skill.toLowerCase().trim(), g.severity || "medium");
+                    const clean = g.skill.toLowerCase().trim();
+                    if (clean.split(/\s+/).length <= 3) {
+                        gapSkills.set(clean, g.severity || "medium");
+                    }
                 }
             });
         }
 
-        // 2. Scan standard catalog in JD
+        // 2. Prefer AI-extracted JD keywords; fall back to the standard catalog only when absent
         const candidates = new Set();
-        standardTechCatalog.forEach(tech => {
-            if (jd.includes(tech)) {
-                candidates.add(tech);
-            }
-        });
+        const primaryKeywords = Array.isArray(jdKeywords)
+            ? jdKeywords.map(keyword => String(keyword).trim().toLowerCase()).filter(Boolean).slice(0, 20)
+            : [];
+        if (primaryKeywords.length > 0) {
+            primaryKeywords.forEach(keyword => candidates.add(keyword));
+        } else {
+            standardTechCatalog.forEach(tech => {
+                if (makeSafeRegex(tech).test(jd)) candidates.add(tech);
+            });
+        }
 
-        // 3. Add explicit skill gap items
+        // 3. Add concise explicit skill gap items
         gapSkills.forEach((_, skill) => {
             candidates.add(skill);
         });
 
-        // 4. Extract word n-grams from JD if catalog had few items
-        const rawWords = jd
-            .replace(/[^a-zA-Z0-9+#.]/g, " ")
-            .split(/\s+/)
-            .filter(w => w.length > 2 && !stopWords.has(w) && !/^\d+$/.test(w));
-
-        const wordFreq = {};
-        rawWords.forEach(w => {
-            wordFreq[w] = (wordFreq[w] || 0) + 1;
-        });
-
-        Object.entries(wordFreq)
-            .filter(([_, count]) => count >= 2)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 15)
-            .forEach(([word]) => candidates.add(word));
-
-        // Evaluate match against candidate resume
+        // 4. Evaluate match against candidate resume
         const list = Array.from(candidates).map(term => {
             const isExplicitGap = gapSkills.has(term);
-            const inResume = !isExplicitGap && res.length > 0 ? res.includes(term) : !isExplicitGap;
-            
-            // Count approximate occurrences using boundary-safe regex.
-            // \b fails for terms containing non-word chars (C++, C#, Node.js etc.) because
-            // \b asserts between \w and \W — the special chars break the boundary assertion.
-            // Instead, use alphanumeric-only lookahead/lookbehind so the pattern correctly
-            // matches these tokens regardless of surrounding punctuation.
-            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const safePattern = new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'gi');
+            const safePattern = makeSafeRegex(term);
             const jdMatches = (jd.match(safePattern) || []).length;
-            const resMatches = inResume ? (res.match(safePattern) || []).length : 0;
+            const resMatches = res.length > 0 ? (res.match(safePattern) || []).length : 0;
+            const inResume = !isExplicitGap && (res.length > 0 ? resMatches > 0 : true);
 
             const severity = gapSkills.get(term) || (isExplicitGap ? "high" : "low");
 
@@ -106,7 +93,7 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
             if (a.isMatched !== b.isMatched) return a.isMatched ? 1 : -1;
             return b.jdFrequency - a.jdFrequency;
         });
-    }, [resumeText, jobDescription, skillGaps]);
+    }, [resumeText, jobDescription, skillGaps, jdKeywords]);
 
     // Metrics
     const stats = useMemo(() => {

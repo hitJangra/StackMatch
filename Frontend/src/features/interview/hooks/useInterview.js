@@ -16,7 +16,7 @@ export const useInterview = () => {
     }
 
     // extract state and state setters
-    const { loading, setLoading, report, setReport, reports, setReports } = context
+    const { loading, setLoading, report, setReport, reports, setReports, resumeFile, setResumeFile } = context
 
     // scan resume and generate full interview prep report
     const generateReport = async ({ jobDescription, resumeFile }) => {
@@ -82,6 +82,8 @@ export const useInterview = () => {
         loading,
         report,
         reports,
+        resumeFile,
+        setResumeFile,
         generateReport,
         getReportById,
         getReports,

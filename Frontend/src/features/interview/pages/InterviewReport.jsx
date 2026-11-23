@@ -1,5 +1,5 @@
 // react hooks
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // navigation and url parameters
 import { useNavigate, useParams } from 'react-router';
 // ui icons
@@ -17,7 +17,9 @@ import {
     Layers,
     FileDown,
     ExternalLink,
-    ArrowUpRight
+    ArrowUpRight,
+    FileText,
+    Loader2
 } from 'lucide-react';
 // interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
@@ -27,6 +29,8 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import { useToast } from '../../../components/Toast';
 // Resume Keyword Heatmap component
 import ResumeKeywordHeatmap from '../components/ResumeKeywordHeatmap';
+// tailored resume export helpers
+import { downloadTailoredResumePdf, downloadTailoredTexResume } from '../components/ResumePdfDocument';
 
 // tab navigation menu items
 const NAV_ITEMS = [
@@ -38,7 +42,7 @@ const NAV_ITEMS = [
     },
     { 
         id: 'technical', 
-        label: 'Technical Questions', 
+        label: 'Domain & Role Questions', 
         icon: Code2,
         countKey: 'technicalQuestions'
     },
@@ -113,6 +117,9 @@ const InterviewReport = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [downloading, setDownloading] = useState(false);
+    const [downloadingTailored, setDownloadingTailored] = useState(false);
+    const [tailoredDropdownOpen, setTailoredDropdownOpen] = useState(false);
+    const tailoredDropdownRef = useRef(null);
 
     useEffect(() => {
         if (interviewId) {
@@ -122,17 +129,55 @@ const InterviewReport = () => {
         }
     }, [interviewId]);
 
-    // download customized resume pdf via pure client-side @react-pdf/renderer
-    const handleDownloadResume = async () => {
+    // close tailored dropdown on outside click
+    useEffect(() => {
+        if (!tailoredDropdownOpen) return;
+        const handleOutside = (e) => {
+            if (tailoredDropdownRef.current && !tailoredDropdownRef.current.contains(e.target)) {
+                setTailoredDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        return () => document.removeEventListener('mousedown', handleOutside);
+    }, [tailoredDropdownOpen]);
+
+    // download prep roadmap pdf via pure client-side @react-pdf/renderer
+    const handleDownloadPrepRoadmap = async () => {
         try {
             setDownloading(true);
-            addToast("Generating your tailored resume PDF...", "info");
+            addToast("Generating your prep roadmap PDF...", "info");
             await getResumePdf(interviewId, report);
-            addToast("Resume downloaded successfully!", "success");
+            addToast("Prep roadmap downloaded successfully!", "success");
         } catch {
-            addToast("Failed to generate resume PDF. Please try again.", "error");
+            addToast("Failed to generate prep roadmap PDF. Please try again.", "error");
         } finally {
             setDownloading(false);
+        }
+    };
+
+    // download tailored resume as PDF
+    const handleDownloadTailoredPdf = async () => {
+        setTailoredDropdownOpen(false);
+        try {
+            setDownloadingTailored(true);
+            addToast("Generating tailored resume PDF...", "info");
+            await downloadTailoredResumePdf(report);
+            addToast("Tailored resume downloaded!", "success");
+        } catch {
+            addToast("Failed to generate tailored resume PDF. Please try again.", "error");
+        } finally {
+            setDownloadingTailored(false);
+        }
+    };
+
+    // download tailored resume as .tex for Overleaf
+    const handleDownloadTex = () => {
+        setTailoredDropdownOpen(false);
+        try {
+            downloadTailoredTexResume(report);
+            addToast("LaTeX file downloaded — open in Overleaf!", "success");
+        } catch {
+            addToast("Failed to generate .tex file. Please try again.", "error");
         }
     };
 
@@ -216,14 +261,65 @@ const InterviewReport = () => {
                         </a>
                     )}
 
+                    {/* Prep Roadmap PDF download — renamed from "Download Tailored Resume" */}
                     <button
-                        onClick={handleDownloadResume}
+                        onClick={handleDownloadPrepRoadmap}
                         disabled={downloading}
                         className="wise-secondary-pill"
                     >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>{downloading ? "Generating PDF..." : "Download Tailored Resume"}</span>
+                        {downloading
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <Download className="w-3.5 h-3.5" />
+                        }
+                        <span>{downloading ? "Generating…" : "Download Prep Roadmap"}</span>
                     </button>
+
+                    {/* Tailored Resume split-dropdown */}
+                    <div className="relative" ref={tailoredDropdownRef}>
+                        {/* main trigger */}
+                        <button
+                            onClick={() => report?.tailoredResume && setTailoredDropdownOpen(prev => !prev)}
+                            disabled={downloadingTailored || !report?.tailoredResume}
+                            title={!report?.tailoredResume ? "Tailored resume not available in this report" : "Export tailored resume"}
+                            className={[
+                                "wise-secondary-pill gap-1.5",
+                                (!report?.tailoredResume || downloadingTailored)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "cursor-pointer"
+                            ].join(" ")}
+                        >
+                            {downloadingTailored
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <FileText className="w-3.5 h-3.5" />
+                            }
+                            <span>{downloadingTailored ? "Generating…" : "Tailored Resume"}</span>
+                            <ChevronDown className={[
+                                "w-3 h-3 ml-0.5 transition-transform duration-150",
+                                tailoredDropdownOpen ? "rotate-180" : ""
+                            ].join(" ")} />
+                        </button>
+
+                        {/* dropdown panel — matches wise card token set */}
+                        {tailoredDropdownOpen && report?.tailoredResume && (
+                            <div className="absolute right-0 top-full mt-1.5 w-52 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                                <button
+                                    onClick={handleDownloadTailoredPdf}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-[#163300]/8 dark:hover:bg-[#9FE870]/8 hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors text-left cursor-pointer"
+                                >
+                                    <Download className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span>Download Tailored PDF</span>
+                                </button>
+                                <div className="border-t border-zinc-100 dark:border-zinc-800" />
+                                <button
+                                    onClick={handleDownloadTex}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-[#163300]/8 dark:hover:bg-[#9FE870]/8 hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors text-left cursor-pointer"
+                                >
+                                    <FileDown className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span>Download .tex (Overleaf)</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -276,6 +372,7 @@ const InterviewReport = () => {
                             resumeText={report.resume}
                             jobDescription={report.jobDescription}
                             skillGaps={report.skillGaps}
+                            jdKeywords={report.jdKeywords}
                         />
                     )}
 

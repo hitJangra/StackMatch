@@ -16,14 +16,22 @@ import {
     Calendar,
     ArrowUpRight,
     Search,
-    AlertCircle
+    AlertCircle,
+    Bookmark,
+    BookmarkCheck
 } from 'lucide-react';
 // interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
 // toast notifications
 import { useToast } from '../../../components/Toast';
 // api call to fetch recommended jobs and persist them
-import { getRecommendedJobs, saveLocalPastJobs } from '../services/interview.api.js';
+import {
+    getRecommendedJobs,
+    saveLocalPastJobs,
+    getSavedJobs,
+    createSavedJob,
+    deleteSavedJob
+} from '../services/interview.api.js';
 // shared axios client for direct api calls
 import { api } from '../../../lib/axios';
 // helper for linkedin job urls
@@ -33,11 +41,10 @@ import { AnalyzingResumeLoader } from '../../../components/Loaders';
 // home dashboard component for scanning resumes and getting recommendations
 const Home = () => {
     // interview state and actions
-    const { loading, generateReport, reports, getReports } = useInterview();
+    const { loading, generateReport, reports, getReports, resumeFile, setResumeFile } = useInterview();
     // job description textarea input
     const [jobDescription, setJobDescription] = useState("");
     // The actual uploaded PDF is retained across both Home modes.
-    const [resumeFile, setResumeFile] = useState(null);
     const selectedFileName = resumeFile?.name || "";
 
     // recommended jobs state
@@ -47,6 +54,7 @@ const Home = () => {
     const [matchingJobId, setMatchingJobId] = useState(null);
     const [homeMode, setHomeMode] = useState("find");
     const [savedJobPrepBanner, setSavedJobPrepBanner] = useState(false);
+    const [savedJobIds, setSavedJobIds] = useState(new Set());
     const reduceMotion = useReducedMotion();
 
     // router and toast
@@ -84,6 +92,60 @@ const Home = () => {
             addToast(`Loaded ${tj.title} for matching!`, "info");
         }
     }, [location.state]);
+
+    useEffect(() => {
+        getSavedJobs()
+            .then((data) => {
+                const ids = new Set(
+                    (data?.jobs || []).map((item) =>
+                        item.url || item.applyLink || item.jobUrl || item.link ||
+                        `${item.title || ""}::${item.company || ""}`
+                    )
+                );
+                setSavedJobIds(ids);
+            })
+            .catch(() => setSavedJobIds(new Set()));
+    }, []);
+
+    const getJobSaveKey = (job) =>
+        job.url || job.applyLink || job.jobUrl || job.link ||
+        `${job.title || ""}::${job.company || ""}`;
+
+    const toggleSavedJob = async (job) => {
+        const key = getJobSaveKey(job);
+        const isSaved = savedJobIds.has(key);
+        try {
+            if (isSaved) {
+                const saved = await getSavedJobs();
+                const match = (saved?.jobs || []).find((item) =>
+                    getJobSaveKey(item) === key ||
+                    (item.title === job.title && item.company === job.company)
+                );
+                if (match?._id) await deleteSavedJob(match._id);
+                setSavedJobIds((current) => {
+                    const next = new Set(current);
+                    next.delete(key);
+                    return next;
+                });
+                addToast("Removed from Saved Jobs.", "info");
+            } else {
+                await createSavedJob({
+                    title: job.title,
+                    company: job.company,
+                    location: job.location,
+                    url: job.url || "",
+                    applyLink: job.applyLink || "",
+                    jobUrl: job.jobUrl || "",
+                    link: job.link || "",
+                    description: job.description || ""
+                });
+                setSavedJobIds((current) => new Set(current).add(key));
+                addToast("Added to Saved Jobs.", "success");
+            }
+        } catch (error) {
+            addToast(error?.response?.data?.message || "Could not update Saved Jobs.", "error");
+        }
+    };
 
     const setResumeFromFile = (file) => {
         if (!file) {
@@ -309,6 +371,9 @@ const Home = () => {
                                 <p className="home-upload-title">
                                     {selectedFileName || "Upload your resume"}
                                 </p>
+                                {selectedFileName && (
+                                    <span className="home-upload-change">Change PDF</span>
+                                )}
                                 <p className="home-upload-meta">PDF, up to 3MB</p>
                             </motion.label>
                         </div>
@@ -359,6 +424,9 @@ const Home = () => {
                                         {selectedFileName ? <FileText size={22} /> : <Upload size={22} />}
                                     </div>
                                     <p className="home-upload-title">{selectedFileName || "Upload resume"}</p>
+                                    {selectedFileName && (
+                                        <span className="home-upload-change">Change PDF</span>
+                                    )}
                                     <p className="home-upload-meta">PDF, up to 3MB</p>
                                 </label>
                             </motion.div>
@@ -424,6 +492,8 @@ const Home = () => {
                         {recommendedJobs.map((job, idx) => {
                             const isMatchingThis = matchingJobId === (job.url || idx);
                             const externalApplyUrl = getLinkedInJobUrl(job);
+                            const saveKey = getJobSaveKey(job);
+                            const isSaved = savedJobIds.has(saveKey);
 
                             return (
                                 <div 
@@ -436,15 +506,26 @@ const Home = () => {
                                                 <Briefcase className="w-4 h-4" />
                                             </span>
                                             {externalApplyUrl && (
-                                                <a
-                                                    href={externalApplyUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="wise-primary-pill"
-                                                >
-                                                    <span>Apply</span>
-                                                    <ExternalLink className="w-3 h-3" />
-                                                </a>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleSavedJob(job)}
+                                                        className={`home-save-bookmark ${isSaved ? 'home-save-bookmark-active' : ''}`}
+                                                        aria-label={isSaved ? 'Unsave job' : 'Save job'}
+                                                        title={isSaved ? 'Unsave job' : 'Save job'}
+                                                    >
+                                                        {isSaved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                                                    </button>
+                                                    <a
+                                                        href={externalApplyUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="wise-primary-pill"
+                                                    >
+                                                        <span>Apply</span>
+                                                        <ExternalLink className="w-3 h-3" />
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
 

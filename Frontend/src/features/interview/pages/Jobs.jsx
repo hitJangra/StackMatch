@@ -2,6 +2,19 @@
 import React, { useState, useEffect } from 'react';
 // navigation hook
 import { useNavigate } from 'react-router';
+
+// decode common HTML entities that job scrapers leave in snippet text
+// e.g. "Black &amp; Veatch" → "Black & Veatch"
+const decodeHtmlEntities = (str) => {
+    if (!str) return str;
+    return String(str)
+        .replace(/&amp;/g,  '&')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&lt;/g,   '<')
+        .replace(/&gt;/g,   '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g,  "'");
+};
 // ui icons
 import { Briefcase, Search, ArrowUpRight, ChevronDown, SlidersHorizontal, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
 // api call to scrape job recommendations and manage past recommendations
@@ -56,34 +69,43 @@ const Jobs = () => {
     const navigate = useNavigate();
 
     const handlePrep = async (job) => {
+        // 1. If a real report already exists for this job, go straight to it.
         try {
             const response = await getAllInterviewReports();
             const reports = response?.interviewReports || [];
             const match = reports.find((report) =>
                 report.title?.toLowerCase() === job.title?.toLowerCase()
-                || report.jobDescription?.includes(job.description)
+                || (job.description && report.jobDescription?.includes(job.description))
             );
             if (match?._id) {
                 navigate(`/interview/${match._id}`);
                 return;
             }
         } catch {
-            // The dashboard flow below can still prepare the job.
+            // No existing report — fall through to the Home prep flow.
         }
-        const localId = `local-prep-${Date.now()}`;
-        const localReport = {
-            _id: localId,
-            title: job.title || 'Target Position',
-            jobDescription: job.description || `${job.title || 'Target Position'} at ${job.company || 'Company'}`,
-            jobUrl: job.url || '',
-            matchScore: 0,
-            technicalQuestions: [],
-            behavioralQuestions: [],
-            skillGaps: [],
-            preparationPlan: []
-        };
-        localStorage.setItem(`local_report_${localId}`, JSON.stringify(localReport));
-        navigate(`/interview/${localId}`);
+
+        // 2. Navigate to Home with the JD prefilled so the user's persisted
+        //    resume is attached and they can click "Score Match & Prep".
+        //    This mirrors the exact flow used by SavedJobs.jsx.
+        const jobDescription = [
+            job.description?.trim(),
+            job.title && job.company
+                ? `${job.title} at ${job.company}`
+                : job.title || job.company || ''
+        ].filter(Boolean).join('\n\n');
+
+        navigate('/home', {
+            state: {
+                homeMode: 'match',
+                savedJobPrepBanner: true,
+                prepJob: {
+                    title: job.title || 'Target Position',
+                    company: job.company || '',
+                    description: jobDescription
+                }
+            }
+        });
     };
 
     // fetch all past recommended jobs on mount
@@ -311,7 +333,7 @@ const Jobs = () => {
                                     {/* description snippet */}
                                     {job.description && (
                                         <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-                                            {job.description}
+                                            {decodeHtmlEntities(job.description)}
                                         </p>
                                     )}
                                 </div>
@@ -428,7 +450,7 @@ const Jobs = () => {
                                     {/* snippet / description */}
                                     {job.description && (
                                         <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-                                            {job.description}
+                                            {decodeHtmlEntities(job.description)}
                                         </p>
                                     )}
                                 </div>

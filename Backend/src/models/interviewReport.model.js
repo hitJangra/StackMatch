@@ -82,8 +82,46 @@ const preparationPlanSchema = new mongoose.Schema({
     } ]
 })
 
+const tailoredResumeSchema = new mongoose.Schema({
+    name: { type: String, default: "" },
+    contact: {
+        email: { type: String, default: "" },
+        phone: { type: String, default: "" },
+        location: { type: String, default: "" },
+        linkedin: { type: String, default: "" },
+        website: { type: String, default: "" }
+    },
+    summary: { type: String, default: "" },
+    education: [{
+        institution: { type: String, default: "" },
+        degree: { type: String, default: "" },
+        location: { type: String, default: "" },
+        dates: { type: String, default: "" },
+        details: [{ type: String }]
+    }],
+    experience: [{
+        title: { type: String, default: "" },
+        organization: { type: String, default: "" },
+        location: { type: String, default: "" },
+        dates: { type: String, default: "" },
+        bullets: [{ type: String }]
+    }],
+    projects: [{
+        name: { type: String, default: "" },
+        technologies: [{ type: String }],
+        dates: { type: String, default: "" },
+        bullets: [{ type: String }]
+    }],
+    skills: [{
+        category: { type: String, default: "" },
+        items: [{ type: String }]
+    }]
+}, { _id: false })
+
 // main schema for saved interview reports
 const interviewReportSchema = new mongoose.Schema({
+    jdKeywords: [{ type: String, trim: true }],
+    tailoredResume: { type: tailoredResumeSchema, default: undefined },
     // target job description input
     jobDescription: {
         type: String,

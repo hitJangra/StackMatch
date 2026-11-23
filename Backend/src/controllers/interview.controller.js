@@ -92,6 +92,8 @@ async function generateInterViewReportController(req, res, next) {
             interViewReportByAi = {
                 matchScore: cachedScore.matchScore,
                 title: cachedScore.title,
+                jdKeywords: cachedScore.jdKeywords || [],
+                tailoredResume: cachedScore.tailoredResume,
                 technicalQuestions: cachedScore.technicalQuestions,
                 behavioralQuestions: cachedScore.behavioralQuestions,
                 skillGaps: cachedScore.skillGaps,
@@ -115,6 +117,8 @@ async function generateInterViewReportController(req, res, next) {
                         cacheKey,
                         matchScore: interViewReportByAi.matchScore,
                         title: interViewReportByAi.title,
+                        jdKeywords: interViewReportByAi.jdKeywords || [],
+                        tailoredResume: interViewReportByAi.tailoredResume,
                         technicalQuestions: interViewReportByAi.technicalQuestions,
                         behavioralQuestions: interViewReportByAi.behavioralQuestions,
                         skillGaps: interViewReportByAi.skillGaps,
