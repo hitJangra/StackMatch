@@ -6,6 +6,8 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 // blacklist model to store invalidated tokens
 const tokenBlacklistModel = require("../models/blacklist.model")
+const savedJobModel = require("../models/savedJob.model")
+const interviewReportModel = require("../models/interviewReport.model")
 
 // handles new user signup
 async function registerUserController(req, res, next) {
@@ -286,11 +288,46 @@ async function updatePasswordController(req, res, next) {
     }
 }
 
+// permanently delete the authenticated user's account and personal data
+async function deleteAccountController(req, res, next) {
+    try {
+        const userId = req.user.id
+        const token = req.cookies.token
+
+        await Promise.all([
+            savedJobModel.deleteMany({ userId }),
+            interviewReportModel.deleteMany({ user: userId }),
+            userModel.findByIdAndDelete(userId)
+        ])
+
+        if (token) {
+            await tokenBlacklistModel.findOneAndUpdate(
+                { token },
+                { $setOnInsert: { token } },
+                { upsert: true }
+            )
+        }
+
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax"
+        })
+
+        res.status(200).json({
+            message: "Account deleted successfully."
+        })
+    } catch (err) {
+        next(err)
+    }
+}
+
 // export controller handlers
 module.exports = {
     registerUserController,
     loginUserController,
     logoutUserController,
     getMeController,
-    updatePasswordController
+    updatePasswordController,
+    deleteAccountController
 }

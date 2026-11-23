@@ -1,5 +1,6 @@
 // react hooks
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 // icons
 import { 
     KeyRound, 
@@ -17,7 +18,10 @@ import {
     Lock,
     Key,
     LogOut,
-    Monitor
+    Monitor,
+    Trash2,
+    X,
+    AlertTriangle
 } from 'lucide-react';
 // auth hook
 import { useAuth } from '../../auth/hooks/useAuth';
@@ -63,7 +67,7 @@ const GROQ_MODELS = [
 // settings view for api keys, theme, and password
 const Settings = () => {
     // authenticated user
-    const { user, handleLogout } = useAuth();
+    const { user, handleLogout, handleDeleteAccount } = useAuth();
     // theme switcher
     const { theme, setTheme } = useTheme();
     // toast notifications
@@ -85,6 +89,9 @@ const Settings = () => {
     const [showNewPass, setShowNewPass] = useState(false);
     const [showConfirmPass, setShowConfirmPass] = useState(false);
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
+    const [deletingAccount, setDeletingAccount] = useState(false);
 
     // load saved settings from storage
     useEffect(() => {
@@ -94,6 +101,15 @@ const Settings = () => {
         setSelectedModel(stored.model || '');
         setOllamaEndpoint(stored.endpoint || 'http://localhost:11434');
     }, []);
+
+    useEffect(() => {
+        if (!deleteModalOpen) return;
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') setDeleteModalOpen(false);
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [deleteModalOpen]);
 
     // handle provider dropdown change
     const handleProviderChange = (e) => {
@@ -210,6 +226,16 @@ const Settings = () => {
             addToast(msg, "error");
         } finally {
             setIsUpdatingPassword(false);
+        }
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteConfirmation !== 'DELETE') return;
+        setDeletingAccount(true);
+        const result = await handleDeleteAccount();
+        setDeletingAccount(false);
+        if (!result?.success) {
+            addToast(result?.message || "Could not delete account.", "error");
         }
     };
 
@@ -691,6 +717,96 @@ const Settings = () => {
                     Log out
                 </button>
             </div>
+
+            <div className="danger-zone-card p-6 rounded-2xl border border-red-500/25 bg-white dark:bg-zinc-900 flex items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Danger Zone</h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                        Permanently delete your account and saved data.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setDeleteConfirmation('');
+                        setDeleteModalOpen(true);
+                    }}
+                    className="delete-account-button"
+                >
+                    <Trash2 size={16} />
+                    Delete Account
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {deleteModalOpen && (
+                    <motion.div
+                        className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onMouseDown={(event) => {
+                            if (event.target === event.currentTarget) setDeleteModalOpen(false);
+                        }}
+                    >
+                        <motion.div
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="delete-account-title"
+                            className="w-full max-w-md rounded-3xl border border-red-500/30 bg-white dark:bg-zinc-900 p-6 space-y-5"
+                            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                        >
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center flex-shrink-0">
+                                        <AlertTriangle size={18} />
+                                    </div>
+                                    <div>
+                                        <h2 id="delete-account-title" className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                                            Delete account
+                                        </h2>
+                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                                            This permanently removes your account, saved jobs, and interview reports.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" className="saved-job-delete" onClick={() => setDeleteModalOpen(false)} aria-label="Close">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div>
+                                <label htmlFor="delete-confirmation" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                    Type DELETE to confirm
+                                </label>
+                                <input
+                                    id="delete-confirmation"
+                                    value={deleteConfirmation}
+                                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                                    className="w-full min-h-11 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <button type="button" className="wise-secondary-pill" onClick={() => setDeleteModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="delete-account-confirm"
+                                    disabled={deleteConfirmation !== 'DELETE' || deletingAccount}
+                                    onClick={handleConfirmDelete}
+                                >
+                                    {deletingAccount ? 'Deleting...' : 'Delete Account'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

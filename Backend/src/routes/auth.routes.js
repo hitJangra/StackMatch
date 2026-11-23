@@ -25,5 +25,8 @@ authRouter.get("/get-me", authMiddleware.authUser, authController.getMeControlle
 // update user password (protected)
 authRouter.put("/update-password", authMiddleware.authUser, authController.updatePasswordController)
 
+// permanently delete the authenticated user's account and data
+authRouter.delete("/account", authMiddleware.authUser, authController.deleteAccountController)
+
 // export auth router
 module.exports = authRouter

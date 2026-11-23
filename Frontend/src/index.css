@@ -1065,6 +1065,35 @@ textarea:focus-visible {
   font-size: 14px;
 }
 
+.delete-account-button,
+.delete-account-confirm {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 16px;
+  border: 1px solid rgba(180, 35, 24, 0.32);
+  border-radius: 999px;
+  background: transparent;
+  color: #B42318;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.delete-account-confirm {
+  border-color: #B42318;
+  background: #B42318;
+  color: #FFFFFF;
+}
+
+.delete-account-confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .auth-loading-screen {
   min-height: 100dvh;
   display: flex;

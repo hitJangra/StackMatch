@@ -5,7 +5,7 @@ import { useNavigate } from "react-router"
 import { AuthContext } from "../auth.context"
 // auth api service functions — getMe is no longer needed here
 // since the session check now lives in AuthProvider
-import { login, logout, register } from "../services/auth.api"
+import { login, logout, register, deleteAccount } from "../services/auth.api"
 
 export function clearUserSpecificState() {
     try {
@@ -103,6 +103,24 @@ export const useAuth = () => {
         }
     }
 
+    const handleDeleteAccount = async () => {
+        setLoggingOut?.(true)
+        try {
+            await deleteAccount()
+            navigate("/", { replace: true })
+            clearUserSpecificState()
+            window.setTimeout(() => setUser(null), 50)
+            window.setTimeout(() => setLoggingOut?.(false), 250)
+            return { success: true }
+        } catch (err) {
+            setLoggingOut?.(false)
+            return {
+                success: false,
+                message: err?.response?.data?.message || "Could not delete account."
+            }
+        }
+    }
+
     // return state and auth handlers
-    return { user, loading, handleLogin, handleRegister, handleLogout }
+    return { user, loading, handleLogin, handleRegister, handleLogout, handleDeleteAccount }
 }
