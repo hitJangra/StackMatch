@@ -32,8 +32,6 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import { useToast } from '../../../components/Toast';
 // Resume Keyword Heatmap component
 import ResumeKeywordHeatmap from '../components/ResumeKeywordHeatmap';
-// tailored resume export helpers
-import { downloadTailoredResumePdf, downloadTailoredTexResume } from '../components/ResumePdfDocument';
 import { evaluateAnswer } from '../services/interview.api';
 
 // tab navigation menu items
@@ -309,6 +307,7 @@ const InterviewReport = () => {
         try {
             setDownloadingTailored(true);
             addToast("Generating tailored resume PDF...", "info");
+            const { downloadTailoredResumePdf } = await import('../components/ResumePdfDocument');
             await downloadTailoredResumePdf(report);
             addToast("Tailored resume downloaded!", "success");
         } catch {
@@ -319,9 +318,10 @@ const InterviewReport = () => {
     };
 
     // download tailored resume as .tex for Overleaf
-    const handleDownloadTex = () => {
+    const handleDownloadTex = async () => {
         setTailoredDropdownOpen(false);
         try {
+            const { downloadTailoredTexResume } = await import('../components/ResumePdfDocument');
             downloadTailoredTexResume(report);
             addToast("LaTeX file downloaded — open in Overleaf!", "success");
         } catch {

@@ -3,6 +3,9 @@ const { ApifyClient } = require("apify-client")
 // cached jobs model to avoid duplicate scraper runs
 const CachedJobs = require("../models/cachedJobs.model")
 
+const sanitizeStr = (val) => (typeof val === "string" ? val.trim() : "")
+const isInvalidType = (val) => val !== undefined && val !== null && typeof val !== "string"
+
 // initialize apify client with api token from env
 const apifyClient = new ApifyClient({
     token: process.env.APIFY_API_TOKEN
@@ -103,20 +106,30 @@ function buildLinkedInUrl(keyword, filters = {}) {
 async function recommendJobsController(req, res, next) {
     try {
         // get keywords array from request body
-        const { keywords } = req.body
+        const { keywords } = req.body || {}
 
         // validate keywords input
-        if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
+        if (!keywords || !Array.isArray(keywords) || keywords.length === 0 || !keywords.every(k => typeof k === "string" && k.trim())) {
             return res.status(400).json({
                 message: "keywords must be a non-empty array of strings."
             })
         }
 
+        const rawLoc = req.query.location !== undefined ? req.query.location : (req.body && req.body.location)
+        const rawExp = req.query.exp !== undefined ? req.query.exp : (req.body && req.body.exp)
+        const rawType = req.query.type !== undefined ? req.query.type : (req.body && req.body.type)
+
+        if (isInvalidType(rawLoc) || isInvalidType(rawExp) || isInvalidType(rawType)) {
+            return res.status(400).json({
+                message: "Filter parameters (location, exp, type) must be strings."
+            })
+        }
+
         // read optional pre-fetch filter query params
         const filters = {
-            location:   (req.query.location || req.body.location || "India").trim(),
-            experience: (req.query.exp      || req.body.exp      || "any").trim(),
-            type:       (req.query.type     || req.body.type     || "any").trim()
+            location:   sanitizeStr(rawLoc) || "India",
+            experience: sanitizeStr(rawExp) || "any",
+            type:       sanitizeStr(rawType) || "any"
         }
 
         // take top 3 keywords to keep scraper execution fast and cheap

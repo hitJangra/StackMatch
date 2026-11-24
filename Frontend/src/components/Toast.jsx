@@ -1,7 +1,7 @@
 // react context and hooks
 import { createContext, useContext, useState, useCallback } from "react"
 // toast styles
-import "./toast.scss"
+import "./toast.css"
 
 // context instance for toasts
 const ToastContext = createContext()

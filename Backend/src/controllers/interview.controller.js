@@ -8,6 +8,8 @@ const { generateInterviewReport, generateJobKeywords, evaluateAnswerContent } = 
 const interviewReportModel = require("../models/interviewReport.model")
 const CachedScores = require("../models/cachedScores.model")
 
+const sanitizeStr = (val) => (typeof val === "string" ? val.trim() : "")
+
 // create unique sha256 hash based on resume text and job desc
 function generateScoreCacheKey({ resumeText, jobDescription, aiProvider = "default", aiModel = "default" }) {
     // strip extra whitespace and normalize line endings
@@ -48,7 +50,12 @@ async function generateInterViewReportController(req, res, next) {
         }
 
         // get job description from form body
-        const { jobDescription } = req.body
+        const { jobDescription } = req.body || {}
+        if (jobDescription !== undefined && jobDescription !== null && typeof jobDescription !== "string") {
+            return res.status(400).json({
+                message: "Job description must be a string."
+            })
+        }
 
         // read custom api key headers if user provided BYOK
         const customApiKey = req.headers["x-ai-api-key"] || req.headers["x-api-key"] || null
@@ -202,7 +209,8 @@ async function getAllInterviewReportsController(req, res, next) {
 // evaluate user's practice answer against question & STAR framework
 async function evaluateAnswerController(req, res, next) {
     try {
-        const { question, userAnswer, role } = req.body
+        const body = req.body && typeof req.body === "object" ? req.body : {}
+        const { question, userAnswer, role } = body
 
         if (!question || typeof question !== "string") {
             return res.status(400).json({
@@ -216,6 +224,12 @@ async function evaluateAnswerController(req, res, next) {
             })
         }
 
+        if (role !== undefined && role !== null && typeof role !== "string") {
+            return res.status(400).json({
+                message: "role must be a string."
+            })
+        }
+
         const customApiKey = req.headers["x-ai-api-key"]
         const aiProvider = req.headers["x-ai-provider"] || "default"
         const aiModel = req.headers["x-ai-model"]
@@ -223,7 +237,7 @@ async function evaluateAnswerController(req, res, next) {
         const evaluation = await evaluateAnswerContent({
             question: question.trim(),
             userAnswer: userAnswer.trim(),
-            role: (role || "").trim(),
+            role: sanitizeStr(role),
             customApiKey,
             aiProvider,
             aiModel

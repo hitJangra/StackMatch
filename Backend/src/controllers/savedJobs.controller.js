@@ -1,6 +1,9 @@
 const SavedJob = require("../models/savedJob.model");
 const mongoose = require("mongoose");
 
+const sanitizeStr = (val) => (typeof val === "string" ? val.trim() : "");
+const isInvalidType = (val) => val !== undefined && val !== null && typeof val !== "string";
+
 function getUserId(req) {
     return req.user?.id || req.user?._id;
 }
@@ -18,22 +21,31 @@ async function getSavedJobs(req, res, next) {
 async function createSavedJob(req, res, next) {
     try {
         const userId = getUserId(req);
-        const { title, company, location, url, applyLink, jobUrl, link, description, notes } = req.body;
-        if (!title || !title.trim()) {
-            return res.status(400).json({ message: "Job title is required." });
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const { title, company, location, url, applyLink, jobUrl, link, description, notes } = body;
+        
+        if (!title || typeof title !== "string" || !title.trim()) {
+            return res.status(400).json({ message: "Job title is required and must be a string." });
+        }
+
+        const optionalFields = { company, location, url, applyLink, jobUrl, link, description, notes };
+        for (const [key, val] of Object.entries(optionalFields)) {
+            if (isInvalidType(val)) {
+                return res.status(400).json({ message: `${key} must be a string.` });
+            }
         }
 
         const job = await SavedJob.create({
             userId,
             title: title.trim(),
-            company: company || "",
-            location: location || "",
-            url: url || "",
-            applyLink: applyLink || "",
-            jobUrl: jobUrl || "",
-            link: link || "",
-            description: description || "",
-            notes: notes || ""
+            company: sanitizeStr(company),
+            location: sanitizeStr(location),
+            url: sanitizeStr(url),
+            applyLink: sanitizeStr(applyLink),
+            jobUrl: sanitizeStr(jobUrl),
+            link: sanitizeStr(link),
+            description: sanitizeStr(description),
+            notes: sanitizeStr(notes)
         });
         res.status(201).json({ success: true, job });
     } catch (error) {
@@ -48,9 +60,20 @@ async function updateSavedJob(req, res, next) {
             return res.status(404).json({ message: "Saved job not found." });
         }
         const updates = {};
-        ["title", "company", "location", "url", "applyLink", "jobUrl", "link", "description", "notes"].forEach((field) => {
-            if (Object.prototype.hasOwnProperty.call(req.body, field)) updates[field] = req.body[field];
-        });
+        const allowedFields = ["title", "company", "location", "url", "applyLink", "jobUrl", "link", "description", "notes"];
+        
+        for (const field of allowedFields) {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                if (typeof req.body[field] !== "string") {
+                    return res.status(400).json({ message: `${field} must be a string.` });
+                }
+                updates[field] = req.body[field].trim();
+            }
+        }
+
+        if (updates.title !== undefined && !updates.title) {
+            return res.status(400).json({ message: "Job title cannot be empty." });
+        }
 
         const job = await SavedJob.findOneAndUpdate(
             { _id: req.params.id, userId },

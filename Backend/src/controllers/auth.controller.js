@@ -87,7 +87,7 @@ async function registerUserController(req, res, next) {
         // set secure auth cookie
         res.cookie("token", token, {
             httpOnly: true, // prevent xss access
-            secure: process.env.NODE_ENV === "production", // https only in prod
+            secure: process.env.NODE_ENV === "production" || req.secure || req.headers["x-forwarded-proto"] === "https",
             sameSite: "lax", // protect against csrf
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         })
@@ -155,7 +155,7 @@ async function loginUserController(req, res, next) {
         // store token in http-only cookie
         res.cookie("token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === "production" || req.secure || req.headers["x-forwarded-proto"] === "https",
             sameSite: "lax",
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         })
@@ -189,7 +189,7 @@ async function logoutUserController(req, res, next) {
         // wipe cookie from browser
         res.clearCookie("token", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === "production" || req.secure || req.headers["x-forwarded-proto"] === "https",
             sameSite: "lax"
         })
 
@@ -310,7 +310,7 @@ async function deleteAccountController(req, res, next) {
 
         res.clearCookie("token", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: process.env.NODE_ENV === "production" || req.secure || req.headers["x-forwarded-proto"] === "https",
             sameSite: "lax"
         })
 

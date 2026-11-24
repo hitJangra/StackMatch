@@ -1,8 +1,12 @@
 // outreach controller using unified ai service
 const { generateOutreachContent } = require("../services/ai.service")
 
+const sanitizeStr = (val) => (typeof val === "string" ? val.trim() : "")
+const isInvalidType = (val) => val !== undefined && val !== null && typeof val !== "string"
+
 async function generateOutreachController(req, res, next) {
     try {
+        const body = req.body && typeof req.body === "object" ? req.body : {}
         const {
             type,
             company,
@@ -11,13 +15,27 @@ async function generateOutreachController(req, res, next) {
             resumeText,
             tone,
             customQuestion
-        } = req.body
+        } = body
 
         // Validate type
         const validTypes = ["referral_dm", "cold_email", "cover_letter", "app_qa"]
-        if (!type || !validTypes.includes(type)) {
+        if (!type || typeof type !== "string" || !validTypes.includes(type)) {
             return res.status(400).json({
                 message: `type must be one of: ${validTypes.join(", ")}`
+            })
+        }
+
+        // Validate that string fields, if passed, are strings (guard against {"$gt": ""} NoSQL objects)
+        if (
+            isInvalidType(company) ||
+            isInvalidType(role) ||
+            isInvalidType(jobDescription) ||
+            isInvalidType(resumeText) ||
+            isInvalidType(tone) ||
+            isInvalidType(customQuestion)
+        ) {
+            return res.status(400).json({
+                message: "Text fields (company, role, jobDescription, resumeText, tone, customQuestion) must be strings."
             })
         }
 
@@ -28,12 +46,12 @@ async function generateOutreachController(req, res, next) {
 
         const result = await generateOutreachContent({
             type,
-            company: (company || "").trim(),
-            role: (role || "").trim(),
-            jobDescription: (jobDescription || "").trim(),
-            resumeText: (resumeText || "").trim(),
-            tone: tone || "Direct",
-            customQuestion: (customQuestion || "").trim(),
+            company: sanitizeStr(company),
+            role: sanitizeStr(role),
+            jobDescription: sanitizeStr(jobDescription),
+            resumeText: sanitizeStr(resumeText),
+            tone: sanitizeStr(tone) || "Direct",
+            customQuestion: sanitizeStr(customQuestion),
             customApiKey,
             aiProvider,
             aiModel
