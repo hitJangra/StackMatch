@@ -13,7 +13,6 @@ import {
     Sun, 
     Moon, 
     ChevronDown, 
-    Sparkles, 
     FileDown, 
     X, 
     CheckCircle2, 
@@ -78,7 +77,7 @@ const Landing = () => {
                     </Link>
 
                     {/* Desktop Anchor Navigation Links */}
-                    <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-[var(--color-ink-2)]" aria-label="Quick links">
+                    <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold text-[var(--color-ink-2)]" aria-label="Quick links">
                         <a href="#features" className="hover:text-[var(--color-ink)] transition-colors">
                             Features
                         </a>
@@ -99,7 +98,7 @@ const Landing = () => {
                         <button
                             type="button"
                             onClick={toggleTheme}
-                            className="theme-icon cursor-pointer shadow-xs"
+                            className="theme-icon cursor-pointer shadow-xs shrink-0"
                             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
                             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
                         >
@@ -110,7 +109,7 @@ const Landing = () => {
                             /* Logged in state */
                             <Link
                                 to="/home"
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#163300] text-white hover:bg-[#204a00] dark:bg-[#9FE870] dark:text-[#163300] dark:hover:bg-[#8dd461] text-sm font-bold transition-all shadow-xs"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#163300] text-white hover:bg-[#204a00] dark:bg-[#9FE870] dark:text-[#163300] dark:hover:bg-[#8dd461] text-sm font-bold transition-all shadow-xs whitespace-nowrap shrink-0"
                             >
                                 <span>Go to Workspace</span>
                                 <ArrowRight size={15} />
@@ -120,13 +119,13 @@ const Landing = () => {
                             <>
                                 <Link
                                     to="/login"
-                                    className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-sm font-semibold text-[var(--color-ink)] hover:text-[#163300] dark:hover:text-[#9FE870] hover:bg-[var(--color-paper-2)] transition-colors"
+                                    className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-sm font-semibold text-[var(--color-ink)] hover:text-[#163300] dark:hover:text-[#9FE870] hover:bg-[var(--color-paper-2)] transition-colors whitespace-nowrap shrink-0"
                                 >
                                     Log in
                                 </Link>
                                 <Link
                                     to="/register"
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#9FE870] hover:bg-[#8dd461] text-[#163300] text-sm font-bold transition-all shadow-sm hover:scale-[1.02]"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#9FE870] hover:bg-[#8dd461] text-[#163300] text-sm font-bold transition-all shadow-sm hover:scale-[1.02] whitespace-nowrap shrink-0"
                                 >
                                     <span>Get Started Free</span>
                                     <ArrowRight size={15} />
@@ -138,12 +137,12 @@ const Landing = () => {
             </header>
 
             <main>
-                {/* 1. Hero Section (tightened for above-the-fold visibility on 1366x768 screens) */}
-                <section className="relative pt-6 sm:pt-10 pb-12 sm:pb-16 overflow-hidden" aria-labelledby="hero-title">
+                {/* 1. Hero Section (tightened for above-the-fold visibility) */}
+                <section className="relative pt-6 sm:pt-8 pb-10 sm:pb-14 overflow-hidden" aria-labelledby="hero-title">
                     <div className="max-w-[var(--container)] mx-auto px-4 sm:px-8 lg:px-12">
                         {/* Hero Text */}
                         <motion.div 
-                            className="text-center max-w-3xl mx-auto space-y-4"
+                            className="text-center max-w-3xl mx-auto space-y-3.5"
                             {...entrance}
                             transition={{ duration: reduceMotion ? 0 : 0.4, ease: 'easeOut' }}
                         >
@@ -153,31 +152,31 @@ const Landing = () => {
                                 <span>ATS Match Algorithm & LaTeX Export</span>
                             </div>
 
-                            {/* Main Headline */}
+                            {/* Main Headline (tightened to punchy 1-2 lines) */}
                             <h1 
                                 id="hero-title"
                                 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-display tracking-tight text-[var(--color-ink)] leading-[1.08] text-balance"
                             >
-                                Stop spraying resumes. Target the <span className="text-[#163300] dark:text-[#9FE870]">exact keywords</span> hiring teams screen for.
+                                Target the <span className="text-[#163300] dark:text-[#9FE870]">exact keywords</span> hiring teams screen for.
                             </h1>
 
-                            {/* Subheadline (punchy & direct) */}
-                            <p className="text-base sm:text-lg text-[var(--color-ink-2)] max-w-2xl mx-auto font-normal leading-relaxed text-pretty">
-                                Benchmark your resume against any job description in seconds. Get ATS-ready single-column LaTeX & PDF resumes, spot skill gaps, and prep for interviews.
+                            {/* Subheadline (punchy 1-line) */}
+                            <p className="text-sm sm:text-base text-[var(--color-ink-2)] max-w-2xl mx-auto font-normal leading-relaxed text-pretty">
+                                Instant ATS keyword scoring, publication-grade LaTeX resumes, and role-specific interview prep.
                             </p>
 
                             {/* CTA Buttons */}
                             <div className="pt-1 flex flex-wrap items-center justify-center gap-3">
                                 <Link
                                     to={user ? "/home" : "/register"}
-                                    className="btn btn-primary px-7 py-3 text-sm sm:text-base font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                                    className="btn btn-primary px-7 py-3 text-sm sm:text-base font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform whitespace-nowrap shrink-0"
                                 >
                                     <span>{user ? "Open Your Workspace" : "Start Matching Free"}</span>
                                     <ArrowRight size={17} />
                                 </Link>
                                 <a
                                     href="#hero-preview"
-                                    className="btn btn-secondary px-5 py-3 text-sm sm:text-base font-semibold border border-[var(--color-rule)] hover:bg-[var(--color-paper-2)] transition-colors"
+                                    className="btn btn-secondary px-5 py-3 text-sm sm:text-base font-semibold border border-[var(--color-rule)] hover:bg-[var(--color-paper-2)] transition-colors whitespace-nowrap shrink-0"
                                 >
                                     Explore Sample Report
                                 </a>
@@ -203,30 +202,38 @@ const Landing = () => {
                         {/* Large, Crisp UI Preview of the StackMatch Interview Report */}
                         <motion.div 
                             id="hero-preview"
-                            className="mt-8 sm:mt-12 max-w-5xl mx-auto"
-                            {...entrance}
-                            transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.1, ease: 'easeOut' }}
+                            className="mt-6 sm:mt-10 max-w-5xl mx-auto"
+                            initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                            whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.2 }}
+                            transition={{ duration: reduceMotion ? 0 : 0.45, ease: 'easeOut' }}
                         >
                             <HeroReportPreview />
                         </motion.div>
                     </div>
                 </section>
 
-                {/* 2. Problem vs. Solution Strip (concise 1-2 line bullets) */}
-                <section id="problem-solution" className="py-16 sm:py-20 border-y border-[var(--color-rule)] bg-[var(--color-paper-2)]/40" aria-label="The Difference">
+                {/* 2. Problem vs. Solution Strip (concise 1-line bullets) */}
+                <section id="problem-solution" className="py-14 sm:py-18 border-y border-[var(--color-rule)] bg-[var(--color-paper-2)]/40" aria-label="The Difference">
                     <div className="max-w-[var(--container)] mx-auto px-4 sm:px-8 lg:px-12">
-                        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 space-y-2">
+                        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
                             <h2 className="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-[var(--color-ink)]">
                                 Why qualified resumes get lost in the recruiter void.
                             </h2>
                             <p className="text-sm sm:text-base text-[var(--color-ink-2)]">
-                                Hiring software filters by keywords and clean formatting. Here is what changes when you target the job.
+                                Hiring algorithms filter by keywords and formatting. Target the job and stand out.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 max-w-4xl mx-auto">
                             {/* Problem Card */}
-                            <div className="rounded-2xl border border-red-500/20 bg-[var(--color-card)] p-6 space-y-4 shadow-xs">
+                            <motion.div 
+                                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                                whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.2 }}
+                                transition={{ duration: reduceMotion ? 0 : 0.45, ease: 'easeOut' }}
+                                className="rounded-2xl border border-red-500/20 bg-[var(--color-card)] p-5 sm:p-6 space-y-4 shadow-xs"
+                            >
                                 <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
                                     <div className="flex items-center gap-2.5">
                                         <div className="p-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400">
@@ -243,28 +250,34 @@ const Landing = () => {
                                     </div>
                                 </div>
 
-                                <ul className="space-y-3 text-xs sm:text-sm text-[var(--color-ink-2)]">
+                                <ul className="space-y-2.5 text-xs sm:text-sm text-[var(--color-ink-2)]">
                                     <li className="flex items-start gap-2.5">
                                         <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Multi-column template crashes:</strong> Canva and Word layouts get jumbled by ATS parsers into unreadable text.</span>
+                                        <span>Multi-column templates crash ATS parsers into unreadable text</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Blind keyword guessing:</strong> Missing the exact terminology hiring algorithms require for an initial pass.</span>
+                                        <span>Keyword guessing misses exact terms required for initial screen</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Entering interviews cold:</strong> Blindsided by technical architecture and behavioral questions you never prepped for.</span>
+                                        <span>Entering interviews cold without role-specific technical Q&A</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Disorganized tracking:</strong> Losing track of tailored resume versions across messy spreadsheets.</span>
+                                        <span>Applications lost and disorganized across chaotic spreadsheets</span>
                                     </li>
                                 </ul>
-                            </div>
+                            </motion.div>
 
                             {/* Solution Card */}
-                            <div className="rounded-2xl border border-[#9FE870]/40 bg-[var(--color-card)] p-6 space-y-4 shadow-md relative overflow-hidden">
+                            <motion.div 
+                                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                                whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.2 }}
+                                transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.1, ease: 'easeOut' }}
+                                className="rounded-2xl border border-[#9FE870]/40 bg-[var(--color-card)] p-5 sm:p-6 space-y-4 shadow-md relative overflow-hidden"
+                            >
                                 <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-4 w-24 h-24 bg-[#9FE870]/10 rounded-full blur-2xl pointer-events-none" />
 
                                 <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
@@ -283,25 +296,25 @@ const Landing = () => {
                                     </div>
                                 </div>
 
-                                <ul className="space-y-3 text-xs sm:text-sm text-[var(--color-ink-2)]">
+                                <ul className="space-y-2.5 text-xs sm:text-sm text-[var(--color-ink-2)]">
                                     <li className="flex items-start gap-2.5">
                                         <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Single-column LaTeX formatting:</strong> Clean typography parsed 100% accurately by Greenhouse, Lever, and Workday.</span>
+                                        <span>Single-column LaTeX parsed with 100% accuracy by Greenhouse & Lever</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Exact keyword gap detection:</strong> Instantly see matched skills and missing qualifications with priority tags.</span>
+                                        <span>Exact semantic keyword match & gap detection before you apply</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Targeted interview prep:</strong> Practice expected technical questions and structured STAR behavioral answers.</span>
+                                        <span>Role-specific technical questions & structured STAR practice roadmap</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
                                         <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span><strong>Saved jobs tracker:</strong> Keep every application, tailored resume, and prep note in one organized place.</span>
+                                        <span>Saved jobs tracker with 1-click tailored prep workflows</span>
                                     </li>
                                 </ul>
-                            </div>
+                            </motion.div>
                         </div>
                     </div>
                 </section>
@@ -309,25 +322,31 @@ const Landing = () => {
                 {/* 3. Scroll-Interactive Feature Showcase (Dribbble 3D Perspective Replicant + Bento Grid) */}
                 <ScrollShowcase />
 
-                {/* 4. 3-Step "How It Works" Walkthrough (trimmed to punchy 1-2 lines per step) */}
+                {/* 4. 3-Step "How It Works" Walkthrough (trimmed to 1 scannable line per step) */}
                 <section id="how-it-works" className="py-16 sm:py-24 border-t border-[var(--color-rule)] bg-[var(--color-paper)]" aria-labelledby="hiw-title">
                     <div className="max-w-[var(--container)] mx-auto px-4 sm:px-8 lg:px-12">
                         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] text-xs font-semibold text-[var(--color-ink-2)]">
-                                <Sparkles className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
+                                <Layers className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                 <span>Fast 3-Step Workflow</span>
                             </div>
                             <h2 id="hiw-title" className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-[var(--color-ink)]">
                                 From job description to interview-ready in 60 seconds.
                             </h2>
                             <p className="text-sm sm:text-base text-[var(--color-ink-2)]">
-                                No manual rewriting. Let StackMatch analyze keywords while you focus on interview delivery.
+                                Zero manual rewriting. Target keywords while you focus on interview delivery.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                             {/* Step 1 */}
-                            <div className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors">
+                            <motion.div 
+                                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                                whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.2 }}
+                                transition={{ duration: reduceMotion ? 0 : 0.45, ease: 'easeOut' }}
+                                className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors"
+                            >
                                 <div className="w-10 h-10 rounded-xl bg-[#163300] text-[#9FE870] flex items-center justify-center font-display font-extrabold text-base shadow-xs">
                                     01
                                 </div>
@@ -335,16 +354,22 @@ const Landing = () => {
                                     Upload Resume Once
                                 </h3>
                                 <p className="text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
-                                    Upload your resume (PDF or text). Our parser extracts your skills and experience into a private profile.
+                                    Upload your resume once (PDF or text).
                                 </p>
                                 <div className="pt-1 text-[11px] font-mono text-[var(--color-muted)] flex items-center gap-1.5">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                     <span>Encrypted & Private</span>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             {/* Step 2 */}
-                            <div className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors">
+                            <motion.div 
+                                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                                whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.2 }}
+                                transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.1, ease: 'easeOut' }}
+                                className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors"
+                            >
                                 <div className="w-10 h-10 rounded-xl bg-[#9FE870] text-[#163300] flex items-center justify-center font-display font-extrabold text-base shadow-xs">
                                     02
                                 </div>
@@ -352,16 +377,22 @@ const Landing = () => {
                                     Paste JD or Pick a Job
                                 </h3>
                                 <p className="text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
-                                    Paste any job description or select a role from your Saved Jobs list to benchmark requirements.
+                                    Paste any job description to benchmark keywords.
                                 </p>
                                 <div className="pt-1 text-[11px] font-mono text-[var(--color-muted)] flex items-center gap-1.5">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                     <span>Domain-Agnostic Scan</span>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             {/* Step 3 */}
-                            <div className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors">
+                            <motion.div 
+                                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                                whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.2 }}
+                                transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
+                                className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-6 space-y-3 shadow-xs hover:border-[#9FE870] transition-colors"
+                            >
                                 <div className="w-10 h-10 rounded-xl bg-[#163300] text-[#9FE870] flex items-center justify-center font-display font-extrabold text-base shadow-xs">
                                     03
                                 </div>
@@ -369,13 +400,13 @@ const Landing = () => {
                                     Export LaTeX & Prep
                                 </h3>
                                 <p className="text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
-                                    Download an ATS-ready single-column PDF or Overleaf .tex file, plus tailored interview prep questions.
+                                    Export single-column LaTeX & practice interview Q&A.
                                 </p>
                                 <div className="pt-1 text-[11px] font-mono text-[var(--color-muted)] flex items-center gap-1.5">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                     <span>ATS Grade A+ Output</span>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
                     </div>
                 </section>
@@ -385,7 +416,7 @@ const Landing = () => {
                     <div className="max-w-[var(--container)] mx-auto px-4 sm:px-8 lg:px-12">
                         <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] text-xs font-semibold text-[var(--color-ink-2)]">
-                                <Sparkles className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
+                                <ShieldCheck className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                 <span>Straightforward Answers</span>
                             </div>
                             <h2 id="faq-title" className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-[var(--color-ink)]">

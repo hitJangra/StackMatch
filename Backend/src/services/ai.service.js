@@ -10,6 +10,123 @@ const defaultAi = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+// in-memory concurrency queue (max 2 simultaneous AI requests)
+class ConcurrencyQueue {
+    constructor(maxConcurrent = 2) {
+        this.maxConcurrent = maxConcurrent;
+        this.currentRunning = 0;
+        this.queue = [];
+    }
+
+    async run(task) {
+        if (this.currentRunning >= this.maxConcurrent) {
+            await new Promise((resolve) => this.queue.push(resolve));
+        }
+        this.currentRunning++;
+        try {
+            return await task();
+        } finally {
+            this.currentRunning--;
+            if (this.queue.length > 0) {
+                const next = this.queue.shift();
+                next();
+            }
+        }
+    }
+}
+
+const aiConcurrencyQueue = new ConcurrencyQueue(2);
+
+// helper to sleep with backoff + jitter
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function isTransientError(err) {
+    if (!err) return false;
+    const status = err.status || err.statusCode || err.response?.status || (err.error && err.error.code);
+    if (status === 503 || status === 429 || status === 500) return true;
+
+    const msg = String(err.message || "").toLowerCase();
+    return (
+        msg.includes("503") ||
+        msg.includes("429") ||
+        msg.includes("500") ||
+        msg.includes("unavailable") ||
+        msg.includes("resource_exhausted") ||
+        msg.includes("rate limit") ||
+        msg.includes("overloaded") ||
+        msg.includes("high traffic") ||
+        msg.includes("econnreset") ||
+        msg.includes("etimedout")
+    );
+}
+
+const RETRY_DELAYS = [1000, 2500, 5000];
+
+// helper to execute gemini calls with retries (backoff+jitter) and automatic model fallback
+async function callWithRetryAndFallback({
+    client,
+    primaryModel,
+    contents,
+    config
+}) {
+    // Model fallback chain: primary model -> gemini-2.0-flash -> gemini-2.0-flash-lite
+    const modelChain = Array.from(new Set([
+        primaryModel || "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite"
+    ]));
+
+    let lastError = null;
+
+    for (let mIdx = 0; mIdx < modelChain.length; mIdx++) {
+        const currentModel = modelChain[mIdx];
+
+        for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+            try {
+                // execute call within concurrency queue (max 2 concurrent)
+                const response = await aiConcurrencyQueue.run(async () => {
+                    return await client.models.generateContent({
+                        model: currentModel,
+                        contents,
+                        config
+                    });
+                });
+                return response;
+            } catch (err) {
+                lastError = err;
+                const isTransient = isTransientError(err);
+                console.warn(
+                    `[AI Service] Attempt ${attempt + 1} with model "${currentModel}" failed: ${err.message}`
+                );
+
+                if (!isTransient) {
+                    // Non-transient error (e.g. invalid auth or bad schema request), rethrow immediately
+                    throw err;
+                }
+
+                // If retries remain for current model, wait with exponential backoff + jitter
+                if (attempt < RETRY_DELAYS.length) {
+                    const delay = RETRY_DELAYS[attempt] + Math.floor(Math.random() * 300);
+                    await wait(delay);
+                } else {
+                    // Retries exhausted for this model; break to fall back to next model
+                    console.warn(
+                        `[AI Service] Retries exhausted for model "${currentModel}". Falling back to next model if available.`
+                    );
+                    break;
+                }
+            }
+        }
+    }
+
+    // All retries and model fallbacks exhausted; throw clean 503 error
+    console.error("[AI Service] All AI retries and model fallbacks exhausted.", lastError?.message);
+    const trafficError = new Error("AI engine is experiencing high traffic. Please retry in a few seconds.");
+    trafficError.status = 503;
+    trafficError.statusCode = 503;
+    throw trafficError;
+}
+
 // sanitize raw LLM text by stripping markdown code fences (e.g. ```json ... ```)
 function parseAiJson(rawText) {
     if (!rawText || typeof rawText !== "string") {
@@ -259,9 +376,10 @@ Rules:
     // select model or default to gemini 2.5 flash
     const selectedModel = aiModel || "gemini-2.5-flash"
 
-    // request structured json from gemini
-    const response = await client.models.generateContent({
-        model: selectedModel,
+    // request structured json from gemini with retries and model fallback
+    const response = await callWithRetryAndFallback({
+        client,
+        primaryModel: selectedModel,
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -313,8 +431,9 @@ ${resume}`
     // model fallback
     const selectedModel = aiModel || "gemini-2.5-flash"
 
-    const response = await client.models.generateContent({
-        model: selectedModel,
+    const response = await callWithRetryAndFallback({
+        client,
+        primaryModel: selectedModel,
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -342,8 +461,9 @@ async function executeStructuredAi({ prompt, schema, schemaDescription, customAp
 
     const selectedModel = aiModel || "gemini-2.5-flash"
 
-    const response = await client.models.generateContent({
-        model: selectedModel,
+    const response = await callWithRetryAndFallback({
+        client,
+        primaryModel: selectedModel,
         contents: prompt,
         config: {
             responseMimeType: "application/json",

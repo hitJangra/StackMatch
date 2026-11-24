@@ -5,7 +5,7 @@ import {
     FileDown, 
     Layers, 
     Code2, 
-    Sparkles, 
+    Target, 
     Check, 
     ExternalLink, 
     ShieldCheck,
@@ -257,7 +257,7 @@ export const HeroReportPreview = () => {
 
                         {/* Recommendation bar */}
                         <div className="mt-3 p-3.5 rounded-xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] text-xs text-[var(--color-ink-2)] flex items-start gap-2.5">
-                            <Sparkles className="w-4 h-4 text-[#163300] dark:text-[#9FE870] flex-shrink-0 mt-0.5" />
+                            <Target className="w-4 h-4 text-[#163300] dark:text-[#9FE870] flex-shrink-0 mt-0.5" />
                             <div>
                                 <strong className="text-[var(--color-ink)] font-semibold">StackMatch Recommendation:</strong> Your frontend and systems foundation aligns 100% with the hiring manager's requirements. We injected targeted talking points for Kubernetes container orchestration in your tailored resume and Q&A roadmap.
                             </div>

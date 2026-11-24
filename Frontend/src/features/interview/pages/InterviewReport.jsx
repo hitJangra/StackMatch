@@ -20,7 +20,7 @@ import {
     ArrowUpRight,
     FileText,
     Loader2,
-    Sparkles,
+    Wand2,
     Check,
     X
 } from 'lucide-react';
@@ -140,7 +140,7 @@ const QuestionCard = ({ item, index, role }) => {
                             onClick={() => setShowPractice(p => !p)}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#163300] dark:text-[#9FE870] hover:underline cursor-pointer"
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
+                            <Wand2 className="w-3.5 h-3.5" />
                             <span>{showPractice ? 'Hide Practice Box' : 'Practice Your Answer'}</span>
                         </button>
 
@@ -148,7 +148,7 @@ const QuestionCard = ({ item, index, role }) => {
                             <div className="mt-3 p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                                        <Sparkles className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
+                                        <Wand2 className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                                         <span>Practice Answer &amp; STAR Evaluation</span>
                                     </label>
                                     <span className="text-[11px] text-zinc-400 font-mono">
@@ -166,7 +166,7 @@ const QuestionCard = ({ item, index, role }) => {
 
                                 <div className="flex items-center justify-between pt-1">
                                     <p className="text-[11px] text-zinc-400">
-                                        AI analyzes STAR structure, clarity &amp; impact.
+                                        STAR structure, clarity &amp; impact analysis.
                                     </p>
                                     <button
                                         type="button"
@@ -175,13 +175,13 @@ const QuestionCard = ({ item, index, role }) => {
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#9FE870] text-[#163300] dark:text-[#163300] hover:bg-[#8ddb5e] disabled:opacity-50 cursor-pointer shadow-xs transition-all"
                                     >
                                         {evaluating ? (
-                                            <>
+                                             <>
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                 <span>Checking...</span>
                                             </>
                                         ) : (
                                             <>
-                                                <Sparkles className="w-3.5 h-3.5" />
+                                                <Wand2 className="w-3.5 h-3.5" />
                                                 <span>Check Answer</span>
                                             </>
                                         )}

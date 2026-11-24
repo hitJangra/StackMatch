@@ -5,7 +5,7 @@ import {
     FileText, 
     CheckCircle2, 
     AlertTriangle, 
-    Sparkles, 
+    Wand2, 
     Target, 
     ArrowRight, 
     Copy, 
@@ -132,15 +132,10 @@ export const ResumeLab = () => {
         <div className="space-y-10 max-w-7xl mx-auto animate-in fade-in duration-300 pb-12">
             {/* Page Header */}
             <div className="wise-page-header">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-                        <FlaskConical className="w-5 h-5 text-[#163300] dark:text-[#9FE870]" />
-                        <span>Resume Lab</span>
-                    </h1>
-                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                        Audit standalone resumes for ATS compliance, passive phrasing, and metric density, or transform weak bullets into quantified impact.
-                    </p>
-                </div>
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
+                    <FlaskConical className="w-5 h-5 text-[#163300] dark:text-[#9FE870]" />
+                    <span>Resume Lab</span>
+                </h1>
             </div>
 
             {/* ── Section 1: Standalone ATS Audit ── */}
@@ -149,12 +144,9 @@ export const ResumeLab = () => {
                     <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
                         <h2 id="audit-heading" className="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 font-mono">
-                            1. Standalone ATS Resume Audit
+                            ATS Resume Audit
                         </h2>
                     </div>
-                    <span className="text-xs text-zinc-400">
-                        Zero job description needed · Evaluates formatting, metrics & verbs
-                    </span>
                 </div>
 
                 {/* Dropzone & Action Bar */}
@@ -241,7 +233,7 @@ export const ResumeLab = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-4 h-4" />
+                                    <FileCheck className="w-4 h-4" />
                                     <span>Audit Resume ATS Health</span>
                                 </>
                             )}
@@ -381,18 +373,13 @@ export const ResumeLab = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="min-h-[340px] p-8 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 flex flex-col items-center justify-center text-center space-y-3">
-                                <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-                                    <FileText className="w-6 h-6" />
+                            <div className="min-h-[340px] p-8 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 flex flex-col items-center justify-center text-center space-y-2">
+                                <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
+                                    <FileCheck className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
                                 </div>
-                                <div className="space-y-1 max-w-sm">
-                                    <p className="text-xs sm:text-sm font-bold text-zinc-700 dark:text-zinc-300">
-                                        No audit performed yet
-                                    </p>
-                                    <p className="text-xs text-zinc-400">
-                                        Upload your resume PDF on the left and run the ATS health scan to identify missing metrics and weak verbs.
-                                    </p>
-                                </div>
+                                <p className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                    Upload a PDF to run an audit
+                                </p>
                             </div>
                         )}
                     </div>
@@ -403,14 +390,11 @@ export const ResumeLab = () => {
             <section className="space-y-6 pt-4 border-t border-zinc-200 dark:border-zinc-800" aria-labelledby="enhancer-heading">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
+                        <Wand2 className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
                         <h2 id="enhancer-heading" className="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 font-mono">
-                            2. Impact Bullet Enhancer (Google XYZ Formula)
+                            Bullet Enhancer
                         </h2>
                     </div>
-                    <span className="text-xs text-zinc-400">
-                        Accomplished [X] as measured by [Y], by doing [Z]
-                    </span>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -515,18 +499,13 @@ export const ResumeLab = () => {
                                 );
                             })
                         ) : (
-                            <div className="min-h-[240px] p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 flex flex-col items-center justify-center text-center space-y-3">
+                            <div className="min-h-[240px] p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 flex flex-col items-center justify-center text-center space-y-2">
                                 <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-                                    <Sparkles className="w-6 h-6" />
+                                    <Wand2 className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
                                 </div>
-                                <div className="space-y-1 max-w-sm">
-                                    <p className="text-xs sm:text-sm font-bold text-zinc-700 dark:text-zinc-300">
-                                        No bullet generated yet
-                                    </p>
-                                    <p className="text-xs text-zinc-400">
-                                        Paste a bullet point on the left to receive 3 recruiter-grade variations with quantifiable scale and metrics.
-                                    </p>
-                                </div>
+                                <p className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                    Paste a bullet to generate rewrites
+                                </p>
                             </div>
                         )}
                     </div>

@@ -102,7 +102,7 @@ export const LocationFilterBar = ({
                             onClick={() => handlePillClick(pill)}
                             className={`px-3 py-1 rounded-full text-xs transition-all cursor-pointer select-none font-medium ${
                                 isSelected
-                                    ? 'bg-[#163300] text-[#9FE870] dark:bg-[#9FE870] dark:text-[#163300] shadow-xs'
+                                    ? 'bg-[#9FE870] text-[#163300] dark:text-[#163300] shadow-xs font-semibold'
                                     : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-zinc-700 dark:text-zinc-300'
                             }`}
                         >

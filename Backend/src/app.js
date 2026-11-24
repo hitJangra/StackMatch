@@ -66,8 +66,9 @@ app.use((err, req, res, next) => {
     const statusCode = err.status || 500
     const isProd = process.env.NODE_ENV === "production"
 
-    // in production, hide internal 500 server error details to prevent data leakage
-    const message = (isProd && statusCode >= 500)
+    // in production, hide internal 500 server error details to prevent data leakage,
+    // but preserve clean 503 high traffic message
+    const message = (isProd && statusCode >= 500 && statusCode !== 503)
         ? "Internal Server Error"
         : (err.message || "Internal Server Error")
 

@@ -233,7 +233,7 @@ const Jobs = () => {
             <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm p-4 shadow-xs space-y-3">
                 {/* filter header */}
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
                     <span>Search Filters</span>
                 </div>
 
@@ -262,17 +262,17 @@ const Jobs = () => {
                 {/* active filter badges */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
                     {location !== 'any' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#9FE870] text-[#163300] dark:text-[#163300] border border-[#9FE870]/40 shadow-xs">
                             {location}
                         </span>
                     )}
                     {experience !== 'any' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
                             🎯 {experienceOptions.find(o => o.value === experience)?.label}
                         </span>
                     )}
                     {jobType !== 'any' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
                             💼 {jobTypeOptions.find(o => o.value === jobType)?.label}
                         </span>
                     )}
@@ -324,7 +324,7 @@ const Jobs = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Search className="w-4 h-4 text-indigo-500" />
+                            <Search className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
                             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
                                 Live Search Results
                             </h2>
@@ -343,7 +343,7 @@ const Jobs = () => {
                             <button
                                 type="button"
                                 onClick={() => handleLocationChange('All India')}
-                                className="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                                className="mt-2 text-xs font-semibold text-[#163300] dark:text-[#9FE870] hover:underline cursor-pointer"
                             >
                                 Show all ({jobs.length})
                             </button>
@@ -438,8 +438,8 @@ const Jobs = () => {
             <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
-                            <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="w-7 h-7 rounded-lg bg-[#9FE870] border border-[#9FE870]/40 flex items-center justify-center shadow-xs">
+                            <Clock className="w-3.5 h-3.5 text-[#163300] dark:text-[#163300]" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
@@ -546,7 +546,7 @@ const Jobs = () => {
                         <button
                             type="button"
                             onClick={() => handleLocationChange('All India')}
-                            className="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                            className="mt-2 text-xs font-semibold text-[#163300] dark:text-[#9FE870] hover:underline cursor-pointer"
                         >
                             Show all ({pastJobs.length})
                         </button>

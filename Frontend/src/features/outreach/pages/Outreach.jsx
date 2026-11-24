@@ -7,7 +7,6 @@ import {
     MessageSquare, 
     Copy, 
     Check, 
-    Sparkles, 
     Building2, 
     Briefcase, 
     SlidersHorizontal,
@@ -47,11 +46,7 @@ const OUTREACH_TABS = [
     }
 ];
 
-const TONES = [
-    { id: 'Direct', label: 'Direct', desc: 'Punchy & high-signal' },
-    { id: 'Formal', label: 'Formal', desc: 'Polished & executive' },
-    { id: 'Concise', label: 'Concise', desc: 'Brief & under 70 words' }
-];
+const TONES = ['Direct', 'Formal', 'Concise'];
 
 export const Outreach = () => {
     const location = useLocation();
@@ -168,15 +163,10 @@ export const Outreach = () => {
         <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
             {/* Header */}
             <div className="wise-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
-                        <Send className="w-5 h-5 text-[#163300] dark:text-[#9FE870]" />
-                        <span>Outreach Hub</span>
-                    </h1>
-                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                        Turn your resume match into high-converting referral DMs, cold emails, cover letters, and portal responses.
-                    </p>
-                </div>
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2.5">
+                    <Send className="w-5 h-5 text-[#163300] dark:text-[#9FE870]" />
+                    <span>Outreach Hub</span>
+                </h1>
 
                 {/* Autofill from Saved Jobs */}
                 {savedJobsList.length > 0 && (
@@ -295,17 +285,16 @@ export const Outreach = () => {
                             <div className="grid grid-cols-3 gap-2">
                                 {TONES.map((t) => (
                                     <button
-                                        key={t.id}
+                                        key={t}
                                         type="button"
-                                        onClick={() => setTone(t.id)}
-                                        className={`px-3 py-2 rounded-xl text-xs font-semibold text-center transition-all cursor-pointer border ${
-                                            tone === t.id
-                                                ? 'bg-[#163300] text-[#9FE870] border-[#163300] dark:bg-[#9FE870] dark:text-[#163300] dark:border-[#9FE870]'
+                                        onClick={() => setTone(t)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold text-center transition-all cursor-pointer border ${
+                                            tone === t
+                                                ? 'bg-[#163300] text-[#9FE870] border-[#163300] dark:bg-[#9FE870] dark:text-[#163300] dark:border-[#9FE870] shadow-xs'
                                                 : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 hover:border-zinc-300'
                                         }`}
                                     >
-                                        <div>{t.label}</div>
-                                        <div className="text-[9px] opacity-75 font-normal truncate">{t.desc}</div>
+                                        {t}
                                     </button>
                                 ))}
                             </div>
@@ -357,7 +346,7 @@ export const Outreach = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-4 h-4" />
+                                    <Send className="w-4 h-4" />
                                     <span>Generate {currentTabObj.label}</span>
                                 </>
                             )}
@@ -428,18 +417,13 @@ export const Outreach = () => {
                                     className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 text-xs sm:text-sm font-sans text-zinc-800 dark:text-zinc-200 leading-relaxed focus:outline-none focus:ring-1 focus:ring-[#9FE870] resize-y"
                                 />
                             ) : (
-                                <div className="min-h-[320px] flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3">
+                                <div className="min-h-[320px] flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
                                     <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-                                        <Send className="w-6 h-6" />
+                                        <Send className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
                                     </div>
-                                    <div className="space-y-1 max-w-sm">
-                                        <p className="text-xs sm:text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                                            Ready to generate your {currentTabObj.label}
-                                        </p>
-                                        <p className="text-xs text-zinc-400">
-                                            {currentTabObj.description} Fill in the target role and company on the left to start.
-                                        </p>
-                                    </div>
+                                    <p className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                        Enter role and company to generate {currentTabObj.label.toLowerCase()}
+                                    </p>
                                 </div>
                             )}
                         </div>
