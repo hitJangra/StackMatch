@@ -16,6 +16,7 @@ import NotFound from "./components/NotFound";
 // loading spinner fallback for lazy chunks
 import LoadingSpinner from "./components/LoadingSpinner";
 import Landing from "./features/landing/Landing";
+import RouteErrorFallback from "./features/landing/components/RouteErrorFallback";
 
 // lazy-loaded feature routes to split heavy dependencies (e.g. @react-pdf/renderer)
 const Jobs = lazy(() => import("./features/interview/pages/Jobs"));
@@ -37,16 +38,19 @@ export const router = createBrowserRouter([
     // public product landing page
     {
         path: "/",
-        element: <Landing />
+        element: <Landing />,
+        errorElement: <RouteErrorFallback />
     },
     {
         path: "/login",
-        element: <Login />
+        element: <Login />,
+        errorElement: <RouteErrorFallback />
     },
     // public registration page
     {
         path: "/register",
-        element: <Register />
+        element: <Register />,
+        errorElement: <RouteErrorFallback />
     },
     // protected application routes (requires login)
     {
@@ -58,6 +62,7 @@ export const router = createBrowserRouter([
                 <AppLayout />
             </Protected>
         ),
+        errorElement: <RouteErrorFallback />,
         children: [
             // dashboard / resume scanner home
             {
@@ -69,39 +74,46 @@ export const router = createBrowserRouter([
     {
         path: "/jobs",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(Jobs, "Loading jobs...") }]
     },
     {
         path: "/saved-jobs",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(SavedJobs, "Loading saved jobs...") }]
     },
     {
         path: "/resume-lab",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(ResumeLab, "Loading Resume Lab...") }]
     },
     {
         path: "/outreach",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(Outreach, "Loading outreach...") }]
     },
     {
         path: "/settings",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(Settings, "Loading settings...") }]
     },
     {
         path: "/interview/:interviewId",
         element: <Protected><AppLayout /></Protected>,
+        errorElement: <RouteErrorFallback />,
         children: [{ index: true, element: withSuspense(InterviewReport, "Loading interview report...") }]
     },
-    { path: "/dashboard", element: <Navigate to="/home" replace /> },
-    { path: "/kanban", element: <Navigate to="/saved-jobs" replace /> },
-    { path: "/history", element: <Navigate to="/saved-jobs" replace /> },
+    { path: "/dashboard", element: <Navigate to="/home" replace />, errorElement: <RouteErrorFallback /> },
+    { path: "/kanban", element: <Navigate to="/saved-jobs" replace />, errorElement: <RouteErrorFallback /> },
+    { path: "/history", element: <Navigate to="/saved-jobs" replace />, errorElement: <RouteErrorFallback /> },
     // catch-all route for missing pages
     {
         path: "*",
-        element: <NotFound />
+        element: <NotFound />,
+        errorElement: <RouteErrorFallback />
     }
 ]);
