@@ -20,7 +20,7 @@ import {
     ArrowUpRight,
     FileText,
     Loader2,
-    Wand2,
+    PenLine,
     Check,
     X
 } from 'lucide-react';
@@ -44,7 +44,7 @@ const NAV_ITEMS = [
     },
     { 
         id: 'technical', 
-        label: 'Domain & Role Questions', 
+        label: 'Technical questions', 
         icon: Code2,
         countKey: 'technicalQuestions'
     },
@@ -56,7 +56,7 @@ const NAV_ITEMS = [
     },
     { 
         id: 'roadmap', 
-        label: 'Preparation', 
+        label: 'Prep plan', 
         icon: Compass,
         countKey: 'preparationPlan'
     },
@@ -85,7 +85,7 @@ const QuestionCard = ({ item, index, role }) => {
                 role: role || 'Candidate'
             });
             setEvaluation(result?.data || result?.evaluation || result);
-            addToast("Answer evaluated successfully!", "success");
+            addToast("Answer scored.", "success");
         } catch (err) {
             console.error(err);
             addToast(err?.response?.data?.message || "Failed to evaluate answer. Try again.", "error");
@@ -140,16 +140,16 @@ const QuestionCard = ({ item, index, role }) => {
                             onClick={() => setShowPractice(p => !p)}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#163300] dark:text-[#9FE870] hover:underline cursor-pointer"
                         >
-                            <Wand2 className="w-3.5 h-3.5" />
-                            <span>{showPractice ? 'Hide Practice Box' : 'Practice Your Answer'}</span>
+                            <PenLine className="w-3.5 h-3.5" />
+                            <span>{showPractice ? 'Hide practice' : 'Practice answer'}</span>
                         </button>
 
                         {showPractice && (
                             <div className="mt-3 p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                                        <Wand2 className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
-                                        <span>Practice Answer &amp; STAR Evaluation</span>
+                                        <PenLine className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
+                                        <span>Your answer</span>
                                     </label>
                                     <span className="text-[11px] text-zinc-400 font-mono">
                                         {userAnswer.trim() ? userAnswer.trim().split(/\s+/).length : 0} words
@@ -159,15 +159,12 @@ const QuestionCard = ({ item, index, role }) => {
                                 <textarea
                                     value={userAnswer}
                                     onChange={(e) => setUserAnswer(e.target.value)}
-                                    placeholder="Draft your answer here (incorporating Situation, Task, Action, and Result)..."
+                                    placeholder="Type your STAR answer..."
                                     rows={4}
                                     className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#163300] dark:focus:ring-[#9FE870] resize-y"
                                 />
 
-                                <div className="flex items-center justify-between pt-1">
-                                    <p className="text-[11px] text-zinc-400">
-                                        STAR structure, clarity &amp; impact analysis.
-                                    </p>
+                                <div className="flex items-center justify-end pt-1">
                                     <button
                                         type="button"
                                         onClick={handleEvaluate}
@@ -181,7 +178,7 @@ const QuestionCard = ({ item, index, role }) => {
                                             </>
                                         ) : (
                                             <>
-                                                <Wand2 className="w-3.5 h-3.5" />
+                                                <PenLine className="w-3.5 h-3.5" />
                                                 <span>Check Answer</span>
                                             </>
                                         )}
@@ -237,7 +234,7 @@ const QuestionCard = ({ item, index, role }) => {
                                         {evaluation.improvedAnswer && (
                                             <div className="space-y-1 pt-1">
                                                 <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                                                    Improved Model Answer
+                                                    Better answer
                                                 </span>
                                                 <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line font-mono text-[11px]">
                                                     {evaluation.improvedAnswer}
@@ -291,9 +288,9 @@ const InterviewReport = () => {
     const handleDownloadPrepRoadmap = async () => {
         try {
             setDownloading(true);
-            addToast("Generating your prep roadmap PDF...", "info");
+            addToast("Generating prep roadmap...", "info");
             await getResumePdf(interviewId, report);
-            addToast("Prep roadmap downloaded successfully!", "success");
+            addToast("Prep roadmap downloaded.", "success");
         } catch {
             addToast("Failed to generate prep roadmap PDF. Please try again.", "error");
         } finally {
@@ -306,10 +303,10 @@ const InterviewReport = () => {
         setTailoredDropdownOpen(false);
         try {
             setDownloadingTailored(true);
-            addToast("Generating tailored resume PDF...", "info");
+            addToast("Generating resume PDF...", "info");
             const { downloadTailoredResumePdf } = await import('../components/ResumePdfDocument');
             await downloadTailoredResumePdf(report);
-            addToast("Tailored resume downloaded!", "success");
+            addToast("Resume downloaded.", "success");
         } catch {
             addToast("Failed to generate tailored resume PDF. Please try again.", "error");
         } finally {
@@ -323,7 +320,7 @@ const InterviewReport = () => {
         try {
             const { downloadTailoredTexResume } = await import('../components/ResumePdfDocument');
             downloadTailoredTexResume(report);
-            addToast("LaTeX file downloaded — open in Overleaf!", "success");
+            addToast("LaTeX downloaded. Open it in Overleaf.", "success");
         } catch {
             addToast("Failed to generate .tex file. Please try again.", "error");
         }
@@ -353,9 +350,9 @@ const InterviewReport = () => {
         'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20';
 
     const scoreLabel =
-        score >= 80 ? 'Strong match for this role' :
-        score >= 60 ? 'Moderate match — targeted prep needed' :
-        'Noticeable skill gaps — follow prep plan';
+        score >= 80 ? 'Strong match' :
+        score >= 60 ? 'Partial match' :
+        'Skill gaps found';
 
     return (
         <div className="space-y-6 w-full animate-in fade-in duration-300">
@@ -380,11 +377,11 @@ const InterviewReport = () => {
                                         className="hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors inline-flex items-center gap-1.5 group/title"
                                         title="Open application"
                                     >
-                                        <span>{report.title || "Detailed Interview Strategy"}</span>
+                                        <span>{report.title || "Interview Report"}</span>
                                         <ArrowUpRight className="w-5 h-5 text-zinc-400 transition-all flex-shrink-0" />
                                     </a>
                                 ) : (
-                                    <span>{report.title || "Detailed Interview Strategy"}</span>
+                                    <span>{report.title || "Interview Report"}</span>
                                 )}
                             </h1>
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${scoreBadgeBg}`}>
@@ -455,7 +452,7 @@ const InterviewReport = () => {
                                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-[#163300]/8 dark:hover:bg-[#9FE870]/8 hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors text-left cursor-pointer"
                                 >
                                     <Download className="w-3.5 h-3.5 flex-shrink-0" />
-                                    <span>Download Tailored PDF</span>
+                                    <span>Download PDF</span>
                                 </button>
                                 <div className="border-t border-zinc-100 dark:border-zinc-800" />
                                 <button
@@ -463,7 +460,7 @@ const InterviewReport = () => {
                                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-[#163300]/8 dark:hover:bg-[#9FE870]/8 hover:text-[#163300] dark:hover:text-[#9FE870] transition-colors text-left cursor-pointer"
                                 >
                                     <FileDown className="w-3.5 h-3.5 flex-shrink-0" />
-                                    <span>Download .tex (Overleaf)</span>
+                                    <span>Download .tex</span>
                                 </button>
                             </div>
                         )}
@@ -476,9 +473,6 @@ const InterviewReport = () => {
                 
                 {/* section tabs sidebar */}
                 <div className="lg:col-span-3 space-y-2">
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold px-2 block">
-                        Evaluation Sections
-                    </span>
                     <div className="space-y-1">
                         {NAV_ITEMS.map((item) => {
                             const Icon = item.icon;
@@ -529,7 +523,7 @@ const InterviewReport = () => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between pb-1">
                                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Technical Inquiries
+                                    Technical questions
                                 </h3>
                                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
                                     {report.technicalQuestions?.length || 0} questions
@@ -548,7 +542,7 @@ const InterviewReport = () => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between pb-1">
                                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Behavioral & Culture Fit
+                                    Behavioral questions
                                 </h3>
                                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
                                     {report.behavioralQuestions?.length || 0} questions
@@ -567,10 +561,10 @@ const InterviewReport = () => {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between pb-1">
                                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Day-by-Day Preparation Plan
+                                    Prep plan
                                 </h3>
                                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                                    {report.preparationPlan?.length || 0} milestones
+                                    {report.preparationPlan?.length || 0} days
                                 </span>
                             </div>
 
@@ -629,7 +623,7 @@ const InterviewReport = () => {
                     {/* missing skills badges */}
                     <div className="interactive-card p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-3">
                         <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold block">
-                            Identified Skill Gaps
+                            Identified skill gaps
                         </span>
 
                         {report.skillGaps && report.skillGaps.length > 0 ? (
@@ -655,7 +649,7 @@ const InterviewReport = () => {
                             </div>
                         ) : (
                             <p className="text-xs text-zinc-500 dark:text-zinc-400 py-1">
-                                No critical skill gaps detected.
+                                No skill gaps found.
                             </p>
                         )}
                     </div>

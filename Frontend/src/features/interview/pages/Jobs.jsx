@@ -16,7 +16,7 @@ const decodeHtmlEntities = (str) => {
         .replace(/&#39;/g,  "'");
 };
 // ui icons
-import { Briefcase, Search, ArrowUpRight, ChevronDown, SlidersHorizontal, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
+import { Briefcase, Search, ArrowUpRight, ChevronDown, Clock, ExternalLink, BookmarkPlus } from 'lucide-react';
 // api call to scrape job recommendations and manage past recommendations
 import { getRecommendedJobs, getPastRecommendations, saveLocalPastJobs, getLocalPastJobs, getAllInterviewReports } from '../services/interview.api';
 // helper for linkedin job urls
@@ -208,7 +208,7 @@ const Jobs = () => {
             if (fetched.length) {
                 addToast(`Found ${fetched.length} jobs!`, "success");
             } else {
-                addToast("No jobs found for these keywords. Try broader roles.", "info");
+                addToast("No jobs found. Try broader keywords.", "info");
             }
         } catch (err) {
             console.error(err);
@@ -231,12 +231,6 @@ const Jobs = () => {
 
             {/* ── filter panel ── */}
             <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm p-4 shadow-xs space-y-3">
-                {/* filter header */}
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
-                    <span>Search Filters</span>
-                </div>
-
                 {/* three filter dropdowns */}
                 <div className="flex flex-wrap gap-3">
                     <FilterSelect
@@ -298,7 +292,7 @@ const Jobs = () => {
                     className="wise-primary-pill disabled:opacity-50"
                 >
                     <Search className="w-3.5 h-3.5" />
-                    <span>{loading ? "Searching..." : "Find Matches"}</span>
+                    <span>{loading ? "Searching..." : "Search jobs"}</span>
                 </button>
             </form>
 
@@ -326,7 +320,7 @@ const Jobs = () => {
                         <div className="flex items-center gap-2">
                             <Search className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
                             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                                Live Search Results
+                                Results
                             </h2>
                         </div>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -338,7 +332,7 @@ const Jobs = () => {
                     {filteredJobs.length === 0 ? (
                         <div className="text-center py-8 px-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                No live search results match "{activeLocation}".
+                                No results in "{activeLocation}".
                             </p>
                             <button
                                 type="button"
@@ -429,7 +423,7 @@ const Jobs = () => {
                 <div className="text-center py-12 px-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
                     <Briefcase className="w-8 h-8 text-zinc-400 mx-auto mb-3" />
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                        Search live opportunities
+                        Search for roles above.
                     </h3>
                 </div>
             )}
@@ -444,7 +438,7 @@ const Jobs = () => {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                                    Past Recommendations
+                                    Past searches
                                 </h2>
                                 <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
                                     {filteredPastJobs.length} of {pastJobs.length} {pastJobs.length === 1 ? 'role' : 'roles'}
@@ -541,7 +535,7 @@ const Jobs = () => {
                 ) : pastJobs.length > 0 ? (
                     <div className="text-center py-8 px-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            No past recommendations match "{activeLocation}".
+                            No past roles in "{activeLocation}".
                         </p>
                         <button
                             type="button"

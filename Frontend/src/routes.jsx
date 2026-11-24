@@ -69,7 +69,7 @@ export const router = createBrowserRouter([
     {
         path: "/jobs",
         element: <Protected><AppLayout /></Protected>,
-        children: [{ index: true, element: withSuspense(Jobs, "Loading jobs pipeline...") }]
+        children: [{ index: true, element: withSuspense(Jobs, "Loading jobs...") }]
     },
     {
         path: "/saved-jobs",
@@ -84,7 +84,7 @@ export const router = createBrowserRouter([
     {
         path: "/outreach",
         element: <Protected><AppLayout /></Protected>,
-        children: [{ index: true, element: withSuspense(Outreach, "Loading Outreach Hub...") }]
+        children: [{ index: true, element: withSuspense(Outreach, "Loading outreach...") }]
     },
     {
         path: "/settings",

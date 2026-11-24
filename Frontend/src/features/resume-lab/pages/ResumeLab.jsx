@@ -5,7 +5,7 @@ import {
     FileText, 
     CheckCircle2, 
     AlertTriangle, 
-    Wand2, 
+    PenLine, 
     Target, 
     ArrowRight, 
     Copy, 
@@ -83,7 +83,7 @@ export const ResumeLab = () => {
             const data = await auditResume({ resumeFile: auditFile });
             if (data?.audit) {
                 setAuditResult(data.audit);
-                addToast('Resume audit complete!', 'success');
+                addToast('Audit complete.', 'success');
             }
         } catch (err) {
             console.error(err);
@@ -97,7 +97,7 @@ export const ResumeLab = () => {
     const handleEnhanceBullet = async (e) => {
         e?.preventDefault();
         if (!bulletInput.trim() || bulletInput.trim().length < 5) {
-            addToast('Please enter a bullet point to enhance.', 'warning');
+            addToast('Enter a bullet first.', 'warning');
             return;
         }
 
@@ -110,7 +110,7 @@ export const ResumeLab = () => {
 
             if (Array.isArray(data?.rewrites)) {
                 setRewrites(data.rewrites);
-                addToast('Generated 3 quantified bullet rewrites!', 'success');
+                addToast('3 rewrites generated.', 'success');
             }
         } catch (err) {
             console.error(err);
@@ -124,7 +124,7 @@ export const ResumeLab = () => {
     const handleCopyRewrite = (text, idx) => {
         navigator.clipboard?.writeText(text);
         setCopiedIndex(idx);
-        addToast('Bullet copied to clipboard!', 'success');
+        addToast('Bullet copied.', 'success');
         setTimeout(() => setCopiedIndex(null), 2000);
     };
 
@@ -143,8 +143,8 @@ export const ResumeLab = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
-                        <h2 id="audit-heading" className="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 font-mono">
-                            ATS Resume Audit
+                        <h2 id="audit-heading" className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                            Resume audit
                         </h2>
                     </div>
                 </div>
@@ -208,10 +208,10 @@ export const ResumeLab = () => {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                                                Click to upload or drag & drop resume PDF
+                                                Upload or drop your resume PDF
                                             </p>
                                             <p className="text-xs text-zinc-400">
-                                                Supports standard text-based single-page or multi-page PDFs up to 3MB
+                                                PDF up to 3MB
                                             </p>
                                         </div>
                                     </>
@@ -229,12 +229,12 @@ export const ResumeLab = () => {
                             {auditLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Scanning ATS signals & metrics...</span>
+                                    <span>Scanning resume...</span>
                                 </>
                             ) : (
                                 <>
                                     <FileCheck className="w-4 h-4" />
-                                    <span>Audit Resume ATS Health</span>
+                                    <span>Run resume audit</span>
                                 </>
                             )}
                         </button>
@@ -245,14 +245,9 @@ export const ResumeLab = () => {
                         {auditLoading ? (
                             <div className="min-h-[340px] p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
                                 <Loader2 className="w-8 h-8 text-[#163300] dark:text-[#9FE870] animate-spin" />
-                                <div className="space-y-1">
-                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                        Analyzing layout tokens, action verbs, and impact metrics...
-                                    </p>
-                                    <p className="text-xs text-zinc-400">
-                                        Evaluating parser readability across Greenhouse, Lever, and Workday criteria.
-                                    </p>
-                                </div>
+                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                    Reading layout, verbs, and metrics...
+                                </p>
                             </div>
                         ) : auditResult ? (
                             <div className="p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-5 animate-in fade-in duration-200">
@@ -260,14 +255,14 @@ export const ResumeLab = () => {
                                 <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
                                     <div>
                                         <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold block">
-                                            ATS Health Benchmark
+                                            ATS score
                                         </span>
                                         <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                                             {auditResult.overallScore >= 85 
-                                                ? 'Strong Candidate Resume' 
+                                                ? 'Strong resume' 
                                                 : auditResult.overallScore >= 70 
-                                                    ? 'Solid Foundation · Actionable Gaps' 
-                                                    : 'Requires Structural Revisions'}
+                                                    ? 'Needs fixes' 
+                                                    : 'Major fixes needed'}
                                         </h3>
                                     </div>
 
@@ -311,7 +306,7 @@ export const ResumeLab = () => {
                                     <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/20 space-y-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                                             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                                            <span>Key Strengths</span>
+                                            <span>Strengths</span>
                                         </div>
                                         <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
                                             {auditResult.strengths?.map((s, i) => (
@@ -327,7 +322,7 @@ export const ResumeLab = () => {
                                     <div className="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-500/20 space-y-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                                             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                            <span>Weak Verbs to Upgrade</span>
+                                            <span>Weak verbs</span>
                                         </div>
                                         <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
                                             {auditResult.weakVerbs?.map((v, i) => (
@@ -343,7 +338,7 @@ export const ResumeLab = () => {
                                     <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 space-y-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                                             <Hash className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                                            <span>Missing Metrics & Scale</span>
+                                            <span>Missing metrics</span>
                                         </div>
                                         <ul className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
                                             {auditResult.missingMetrics?.map((m, i) => (
@@ -359,7 +354,7 @@ export const ResumeLab = () => {
                                     <div className="p-4 rounded-xl bg-[#9FE870]/10 border border-[#9FE870]/30 space-y-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-[#163300] dark:text-[#9FE870]">
                                             <Zap className="w-4 h-4 flex-shrink-0" />
-                                            <span>Immediate Quick Wins</span>
+                                            <span>Quick wins</span>
                                         </div>
                                         <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
                                             {auditResult.quickWins?.map((w, i) => (
@@ -390,9 +385,9 @@ export const ResumeLab = () => {
             <section className="space-y-6 pt-4 border-t border-zinc-200 dark:border-zinc-800" aria-labelledby="enhancer-heading">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex items-center gap-2">
-                        <Wand2 className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
-                        <h2 id="enhancer-heading" className="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 font-mono">
-                            Bullet Enhancer
+                        <PenLine className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
+                        <h2 id="enhancer-heading" className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                            Bullet enhancer
                         </h2>
                     </div>
                 </div>
@@ -402,11 +397,8 @@ export const ResumeLab = () => {
                     <form onSubmit={handleEnhanceBullet} className="lg:col-span-5 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                                Raw Resume Bullet Point *
+                                Resume bullet *
                             </label>
-                            <p className="text-[11px] text-zinc-400">
-                                Paste any flat or passive bullet from your resume to rewrite.
-                            </p>
                             <textarea
                                 rows={4}
                                 required
@@ -419,7 +411,7 @@ export const ResumeLab = () => {
 
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                                Target Role Context (Optional)
+                                Target role (optional)
                             </label>
                             <input
                                 type="text"
@@ -438,7 +430,7 @@ export const ResumeLab = () => {
                             {enhanceLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Engineering 3 quantified rewrites...</span>
+                                    <span>Writing rewrites...</span>
                                 </>
                             ) : (
                                 <>
@@ -455,15 +447,15 @@ export const ResumeLab = () => {
                             <div className="min-h-[260px] p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
                                 <Loader2 className="w-8 h-8 text-[#163300] dark:text-[#9FE870] animate-spin" />
                                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Applying active verbs and Google XYZ metric frameworks...
+                                    Rewriting bullet...
                                 </p>
                             </div>
                         ) : rewrites.length > 0 ? (
                             rewrites.map((rewrite, idx) => {
                                 const angleLabels = [
-                                    { title: 'Scale & Metric Focus', badge: 'High Impact' },
-                                    { title: 'Architecture & Strategy Focus', badge: 'Technical Depth' },
-                                    { title: 'Efficiency & Problem-Solving Focus', badge: 'Execution' }
+                                    { title: 'Metrics', badge: 'High impact' },
+                                    { title: 'Architecture', badge: 'Technical depth' },
+                                    { title: 'Problem solving', badge: 'Execution' }
                                 ];
                                 const info = angleLabels[idx] || { title: `Rewrite Variation ${idx + 1}`, badge: 'Quantified' };
                                 const isCopied = copiedIndex === idx;
@@ -501,7 +493,7 @@ export const ResumeLab = () => {
                         ) : (
                             <div className="min-h-[240px] p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 flex flex-col items-center justify-center text-center space-y-2">
                                 <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-                                    <Wand2 className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
+                                    <PenLine className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
                                 </div>
                                 <p className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">
                                     Paste a bullet to generate rewrites

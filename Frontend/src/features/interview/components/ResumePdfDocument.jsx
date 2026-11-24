@@ -149,29 +149,27 @@ export const ResumePdfDocument = ({ report }) => {
     const techQuestions = Array.isArray(report?.technicalQuestions) ? report.technicalQuestions : [];
 
     return (
-        <Document title={`Resume_Audit_${title.replace(/\s+/g, "_")}`}>
+        <Document title={`Prep_Report_${title.replace(/\s+/g, "_")}`}>
             <Page size="A4" style={styles.page}>
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.candidateName}>Target Role: {title}</Text>
-                    <Text style={styles.roleTitle}>ATS Alignment & Technical Interview Profile</Text>
-                    <Text style={styles.scoreBadge}>Match Score: {matchScore}% Alignment</Text>
+                    <Text style={styles.roleTitle}>Interview prep report</Text>
+                    <Text style={styles.scoreBadge}>Match score: {matchScore}%</Text>
                 </View>
 
                 {/* Target Alignment Overview */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Profile & Target Alignment</Text>
+                    <Text style={styles.sectionTitle}>Overview</Text>
                     <Text style={styles.paragraph}>
-                        This customized ATS profile has been synthesized against the target job requirements.
-                        Match alignment is currently calibrated at {matchScore}%. Below is the strategic focus,
-                        identified domain competencies, and critical focal points.
+                        Prepared for {title}. Match score: {matchScore}%.
                     </Text>
                 </View>
 
                 {/* Skill Gaps & Critical Competencies */}
                 {skillGaps.length > 0 && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Identified Competencies & Gaps</Text>
+                        <Text style={styles.sectionTitle}>Skill gaps</Text>
                         <View style={styles.badgeRow}>
                             {skillGaps.map((gap, i) => (
                                 <Text 
@@ -188,7 +186,7 @@ export const ResumePdfDocument = ({ report }) => {
                 {/* Technical Preparation Focus */}
                 {techQuestions.length > 0 && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Target Technical Focus Areas</Text>
+                        <Text style={styles.sectionTitle}>Technical questions</Text>
                         {techQuestions.slice(0, 3).map((q, idx) => (
                             <View key={idx} style={styles.itemBlock}>
                                 <Text style={styles.itemTitle}>• {q.question}</Text>
@@ -201,7 +199,7 @@ export const ResumePdfDocument = ({ report }) => {
                 {/* Structured Prep Roadmap */}
                 {prepPlan.length > 0 && (
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Recommended Execution Roadmap</Text>
+                        <Text style={styles.sectionTitle}>Prep plan</Text>
                         {prepPlan.slice(0, 4).map((day, idx) => (
                             <View key={idx} style={styles.itemBlock}>
                                 <Text style={styles.itemTitle}>Day {day.day}: {day.focus}</Text>
@@ -218,7 +216,7 @@ export const ResumePdfDocument = ({ report }) => {
 
                 {/* Footer */}
                 <Text style={styles.footer}>
-                    Generated via StackMatch • ATS Optimization & Interview Strategy Suite
+                    Generated with StackMatch
                 </Text>
             </Page>
         </Document>

@@ -1,536 +1,663 @@
-import React, { useRef, useState } from 'react';
-import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
-import { 
-    Layers, 
-    FileText, 
-    Compass, 
-    BookmarkCheck, 
-    CheckCircle2, 
-    AlertTriangle, 
-    FileDown, 
-    ExternalLink, 
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
+import {
+    AlertTriangle,
+    ArrowLeft,
     ArrowRight,
-    Code2,
-    Calendar,
-    Target,
-    Send,
-    FlaskConical,
-    MapPin,
-    Copy,
+    Bookmark,
     Check,
-    Wand2,
-    ShieldCheck
+    CheckCircle2,
+    Copy,
+    FileText,
+    FlaskConical,
+    Layers,
+    MapPin,
+    Send
 } from 'lucide-react';
-import { Link } from 'react-router';
+import Reveal from './Reveal';
 
-// Mouse-tracking spotlight card with subtle #9FE870 radial hover glow
-const SpotlightCard = ({ children, className = "", delay = 0, reduceMotion = false }) => {
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-    const [isHovered, setIsHovered] = useState(false);
+const DECK_GAP = 16;
 
-    const handleMouseMove = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    };
+const FEATURES = [
+    {
+        id: 'heatmap',
+        number: '01',
+        tag: 'Match',
+        icon: Layers,
+        title: 'ATS Keyword Heatmap',
+        subtitle: "See what matches. Fix what doesn't."
+    },
+    {
+        id: 'latex',
+        number: '02',
+        tag: 'Export',
+        icon: FileText,
+        title: 'Overleaf .tex & PDF',
+        subtitle: 'Clean exports, ready to send.'
+    },
+    {
+        id: 'outreach',
+        number: '03',
+        tag: 'Outreach',
+        icon: Send,
+        title: 'Outreach Hub',
+        subtitle: 'Referral messages, emails, and cover letters.'
+    },
+    {
+        id: 'lab',
+        number: '04',
+        tag: 'Rewrite',
+        icon: FlaskConical,
+        title: 'Resume Lab',
+        subtitle: 'Turn weak bullets into clear results.'
+    },
+    {
+        id: 'jobs',
+        number: '05',
+        tag: 'Discover',
+        icon: MapPin,
+        title: 'Location-Filtered Jobs',
+        subtitle: 'Find roles near you or remote.'
+    },
+    {
+        id: 'star',
+        number: '06',
+        tag: 'Practice',
+        icon: CheckCircle2,
+        title: 'STAR Interview Practice',
+        subtitle: 'Practice answers with structure feedback.'
+    }
+];
+
+const HeatmapPreview = () => (
+    <div className="flex h-full min-h-[220px] flex-col gap-3 rounded-2xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-4">
+        <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+                Job keywords
+            </span>
+            <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                7 matched · 2 missing
+            </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#9FE870] px-2.5 py-1 text-[11px] font-semibold text-[#163300]">
+                <Check className="h-3 w-3" />
+                React 19
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#9FE870] px-2.5 py-1 text-[11px] font-semibold text-[#163300]">
+                <Check className="h-3 w-3" />
+                TypeScript
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#9FE870]/50 bg-[#9FE870]/20 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-ink)]">
+                <Check className="h-3 w-3" />
+                PostgreSQL
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#9FE870]/40 bg-[#9FE870]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--color-ink-2)]">
+                <Check className="h-3 w-3" />
+                Redis
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-3 w-3" />
+                Kubernetes
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-3 w-3" />
+                Terraform
+            </span>
+        </div>
+
+        <div className="mt-auto flex items-center gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2.5">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="min-w-0">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-muted)]">
+                    Top gap
+                </p>
+                <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
+                    Kubernetes
+                </p>
+            </div>
+            <span className="ml-auto whitespace-nowrap rounded-full bg-[var(--color-card)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-ink-2)]">
+                Add one project
+            </span>
+        </div>
+    </div>
+);
+
+const LatexPreview = () => (
+    <div className="flex h-full min-h-[220px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-[#0D120C]">
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
+            <div className="flex min-w-0 items-center gap-2">
+                <span className="flex gap-1">
+                    <span className="h-2 w-2 rounded-full bg-red-400/80" />
+                    <span className="h-2 w-2 rounded-full bg-amber-400/80" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-400/80" />
+                </span>
+                <span className="truncate font-mono text-[10px] text-zinc-400">
+                    resume.tex
+                </span>
+            </div>
+            <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[#9FE870] px-2 py-0.5 text-[10px] font-bold text-[#163300]">
+                <Check className="h-3 w-3" />
+                ATS safe
+            </span>
+        </div>
+
+        <pre className="min-h-0 flex-1 overflow-hidden whitespace-pre-wrap break-words p-4 font-mono text-[10px] leading-5 text-zinc-300 sm:text-[11px] sm:leading-6">{`\\documentclass[10pt]{article}
+\\begin{document}
+\\section*{Experience}
+\\item Cut checkout latency 38% for 2M users
+\\item Built ATS-safe layouts with React
+\\end{document}`}</pre>
+
+        <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5 font-mono text-[10px] text-zinc-400">
+            <span>Overleaf ready</span>
+            <span className="font-semibold text-[#9FE870]">PDF + .tex</span>
+        </div>
+    </div>
+);
+
+const OutreachPreview = () => (
+    <div className="flex h-full min-h-[220px] flex-col overflow-hidden rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)]">
+        <div className="flex items-center gap-1 border-b border-[var(--color-rule)] px-3 pt-3 text-[10px] font-mono">
+            <span className="rounded-t-lg border-x border-t border-[var(--color-rule)] bg-[var(--color-paper-3)] px-2.5 py-1.5 font-semibold text-[var(--color-ink)]">
+                Referral
+            </span>
+            <span className="px-2 text-[var(--color-muted)]">Email</span>
+            <span className="px-2 text-[var(--color-muted)]">Cover letter</span>
+        </div>
+
+        <div className="flex flex-1 flex-col gap-3 p-4">
+            <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#163300] text-[10px] font-bold text-[#9FE870]">
+                    SC
+                </span>
+                <div>
+                    <p className="text-xs font-semibold text-[var(--color-ink)]">Sarah Chen</p>
+                    <p className="text-[10px] text-[var(--color-muted)]">Stripe · Engineering</p>
+                </div>
+            </div>
+
+            <p className="rounded-xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-3 text-xs leading-relaxed text-[var(--color-ink-2)]">
+                Hi Sarah — I saw the frontend role on your team. I cut checkout latency by 38% for 2M users and would love to share how I'd approach your payments UI.
+            </p>
+
+            <div className="mt-auto flex gap-1.5">
+                {['Short', 'Warm', 'Specific'].map((tag) => (
+                    <span
+                        key={tag}
+                        className="rounded-full bg-[var(--color-paper-2)] px-2 py-1 text-[10px] font-semibold text-[var(--color-muted)]"
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-[var(--color-rule)] px-4 py-2.5">
+            <span className="font-mono text-[10px] text-[var(--color-muted)]">Draft</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#9FE870] px-2.5 py-1 text-[10px] font-bold text-[#163300]">
+                <Copy className="h-3 w-3" />
+                Copy message
+            </span>
+        </div>
+    </div>
+);
+
+const LabPreview = () => (
+    <div className="flex h-full min-h-[220px] flex-col gap-3 rounded-2xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-4">
+        <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+                Bullet rewrite
+            </span>
+            <span className="text-[10px] font-semibold text-[var(--color-ink-2)]">2 of 3</span>
+        </div>
+
+        <div className="rounded-xl border border-[var(--color-rule)] bg-[var(--color-card)] p-3">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-muted)]">Before</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted)] line-through">
+                Worked on checkout page performance
+            </p>
+        </div>
+
+        <div className="flex justify-center text-[var(--color-muted)]" aria-hidden="true">
+            ↓
+        </div>
+
+        <div className="rounded-xl border border-[#9FE870]/50 bg-[#9FE870]/10 p-3">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[#163300] dark:text-[#9FE870]">After</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-ink)]">
+                <strong className="font-semibold">Cut checkout latency 38%</strong> for 2M users with Redis caching.
+            </p>
+        </div>
+
+        <div className="mt-auto flex flex-wrap gap-1.5">
+            {['Action verb', 'Metric', 'Result'].map((label) => (
+                <span
+                    key={label}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#9FE870]/20 px-2 py-1 text-[10px] font-semibold text-[var(--color-ink)]"
+                >
+                    <Check className="h-3 w-3" />
+                    {label}
+                </span>
+            ))}
+        </div>
+    </div>
+);
+
+const JobsPreview = () => {
+    const jobs = [
+        { mark: 'L', title: 'Frontend Engineer', meta: 'Linear · Bengaluru · Hybrid', saved: true },
+        { mark: 'V', title: 'Product Engineer', meta: 'Vercel · Remote', saved: false },
+        { mark: 'R', title: 'UI Engineer', meta: 'Razorpay · Bengaluru', saved: false }
+    ];
 
     return (
-        <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-            whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : delay, ease: 'easeOut' }}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            className={`relative overflow-hidden rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] p-5 sm:p-6 transition-all duration-300 hover:border-[#9FE870]/60 shadow-xs group ${className}`}
-        >
-            {isHovered && (
-                <div
-                    className="pointer-events-none absolute -inset-px transition-opacity duration-300"
-                    style={{
-                        background: `radial-gradient(350px circle at ${mousePos.x}px ${mousePos.y}px, rgba(159, 232, 112, 0.12), transparent 75%)`
-                    }}
-                />
-            )}
-            <div className="relative z-10 flex flex-col justify-between h-full space-y-4">
-                {children}
+        <div className="flex h-full min-h-[220px] flex-col gap-3 rounded-2xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-4">
+            <div className="flex flex-wrap gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#9FE870] px-2.5 py-1 text-[10px] font-bold text-[#163300]">
+                    <MapPin className="h-3 w-3" />
+                    Bengaluru
+                </span>
+                <span className="rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-muted)]">
+                    Remote
+                </span>
+                <span className="rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-muted)]">
+                    Hyderabad
+                </span>
             </div>
-        </motion.div>
+
+            <div className="space-y-2">
+                {jobs.map((job) => (
+                    <div
+                        key={job.title}
+                        className="flex items-center gap-2.5 rounded-xl border border-[var(--color-rule)] bg-[var(--color-card)] p-2.5"
+                    >
+                        <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-[var(--color-paper-2)] text-[10px] font-bold text-[var(--color-ink)]">
+                            {job.mark}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
+                                {job.title}
+                            </p>
+                            <p className="truncate text-[10px] text-[var(--color-muted)]">
+                                {job.meta}
+                            </p>
+                        </div>
+                        <Bookmark
+                            className={`h-3.5 w-3.5 flex-shrink-0 ${
+                                job.saved ? 'fill-[#9FE870] text-[#163300] dark:text-[#9FE870]' : 'text-[var(--color-muted)]'
+                            }`}
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const StarPreview = () => (
+    <div className="flex h-full min-h-[220px] flex-col gap-3 rounded-2xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-4">
+        <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-muted)]">
+                Behavioral
+            </span>
+            <span className="text-[10px] font-semibold text-[var(--color-ink-2)]">Question 3 of 8</span>
+        </div>
+
+        <p className="text-xs font-semibold leading-relaxed text-[var(--color-ink)]">
+            "Tell me about a time you shipped under a tight deadline."
+        </p>
+
+        <div className="grid grid-cols-4 gap-1.5">
+            {[
+                { letter: 'S', done: true },
+                { letter: 'T', done: true },
+                { letter: 'A', done: true },
+                { letter: 'R', done: false }
+            ].map((item) => (
+                <div
+                    key={item.letter}
+                    className={`flex items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold ${
+                        item.done
+                            ? 'bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]'
+                            : 'border border-dashed border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-300'
+                    }`}
+                >
+                    {item.letter}
+                    {item.done ? <Check className="h-3 w-3" /> : null}
+                </div>
+            ))}
+        </div>
+
+        <div className="mt-auto rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                Feedback
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-ink-2)]">
+                Add one measurable result to complete the R.
+            </p>
+        </div>
+    </div>
+);
+
+const FeaturePreview = ({ type }) => {
+    switch (type) {
+        case 'heatmap':
+            return <HeatmapPreview />;
+        case 'latex':
+            return <LatexPreview />;
+        case 'outreach':
+            return <OutreachPreview />;
+        case 'lab':
+            return <LabPreview />;
+        case 'jobs':
+            return <JobsPreview />;
+        case 'star':
+            return <StarPreview />;
+        default:
+            return null;
+    }
+};
+
+const FeatureCard = ({ feature, isActive, innerRef, reduceMotion }) => {
+    const Icon = feature.icon;
+
+    return (
+        <motion.article
+            ref={innerRef}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${feature.number} — ${feature.title}`}
+            aria-hidden={!isActive}
+            animate={{
+                scale: reduceMotion ? 1 : isActive ? 1 : 0.94,
+                opacity: isActive ? 1 : 0.6
+            }}
+            transition={{
+                duration: reduceMotion ? 0 : 0.35,
+                ease: [0.22, 1, 0.36, 1]
+            }}
+            className={`flex min-h-[30rem] w-[86vw] max-w-[40rem] shrink-0 select-none flex-col overflow-hidden rounded-3xl border bg-[var(--color-card)] shadow-xl transition-colors duration-300 sm:min-h-[28rem] ${
+                isActive
+                    ? 'border-[#9FE870]'
+                    : 'border-[var(--color-rule)]'
+            }`}
+        >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--color-rule)] px-5 py-3.5 sm:px-6">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span
+                        className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg transition-colors ${
+                            isActive
+                                ? 'bg-[#9FE870] text-[#163300]'
+                                : 'bg-[var(--color-paper-2)] text-[var(--color-ink-2)]'
+                        }`}
+                    >
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+                        {feature.tag}
+                    </span>
+                </div>
+                <span className="font-mono text-[10px] font-semibold tabular-nums text-[var(--color-muted)]">
+                    {feature.number}
+                </span>
+            </div>
+
+            <div className="px-5 pt-4 sm:px-6">
+                <h3 className="font-display text-2xl font-extrabold tracking-tight text-[var(--color-ink)]">
+                    {feature.title}
+                </h3>
+                <p className="mt-1 text-sm text-[var(--color-ink-2)]">
+                    {feature.subtitle}
+                </p>
+            </div>
+
+            <div className="flex flex-1 p-4 sm:p-5">
+                <div className="w-full">
+                    <FeaturePreview type={feature.id} />
+                </div>
+            </div>
+        </motion.article>
     );
 };
 
 export const ScrollShowcase = () => {
-    const containerRef = useRef(null);
     const reduceMotion = useReducedMotion();
-    const [activeFeature, setActiveFeature] = useState(0);
+    const viewportRef = useRef(null);
+    const cardRef = useRef(null);
+    const activeIndexRef = useRef(0);
+    const animationRef = useRef(null);
+    const x = useMotionValue(0);
 
-    // Track scroll progress of this container
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ['start end', 'end start']
-    });
+    const [index, setIndex] = useState(0);
+    const [metrics, setMetrics] = useState({ viewportWidth: 0, cardWidth: 0 });
 
-    // 3D perspective scroll transform (straightens smoothly on scroll)
-    const rotateX = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [14, 0, 0, -6]);
-    const scale = useTransform(scrollYProgress, [0, 0.35, 0.7, 1], [0.94, 1, 1, 0.96]);
-    const translateY = useTransform(scrollYProgress, [0, 0.35], [50, 0]);
-    const opacity = useTransform(scrollYProgress, [0, 0.25], [0.6, 1]);
+    const ready = metrics.viewportWidth > 0 && metrics.cardWidth > 0;
 
-    const interactiveStages = [
-        {
-            id: 'heatmap',
-            icon: Layers,
-            title: 'ATS Keyword Heatmap',
-            badge: '100% Parsing Accuracy',
-            preview: 'heatmap'
+    const xFor = useCallback(
+        (slideIndex) => {
+            const step = metrics.cardWidth + DECK_GAP;
+            return (metrics.viewportWidth - metrics.cardWidth) / 2 - slideIndex * step;
         },
-        {
-            id: 'latex',
-            icon: FileText,
-            title: 'Overleaf LaTeX Export',
-            badge: 'Publication Typography',
-            preview: 'latex'
-        },
-        {
-            id: 'prep',
-            icon: Compass,
-            title: 'Role-Specific Prep',
-            badge: 'Targeted Q&A',
-            preview: 'prep'
-        },
-        {
-            id: 'pipeline',
-            icon: BookmarkCheck,
-            title: 'Saved Jobs Pipeline',
-            badge: '1-Click Match Sync',
-            preview: 'pipeline'
+        [metrics.cardWidth, metrics.viewportWidth]
+    );
+
+    const stopAnimation = useCallback(() => {
+        if (animationRef.current) {
+            animationRef.current.stop();
+            animationRef.current = null;
         }
-    ];
+    }, []);
+
+    const goTo = useCallback(
+        (nextIndex) => {
+            if (!ready) return;
+
+            const clamped = Math.max(0, Math.min(FEATURES.length - 1, nextIndex));
+            activeIndexRef.current = clamped;
+            setIndex(clamped);
+            stopAnimation();
+
+            if (reduceMotion) {
+                x.set(xFor(clamped));
+                return;
+            }
+
+            animationRef.current = animate(x, xFor(clamped), {
+                type: 'spring',
+                stiffness: 280,
+                damping: 32,
+                mass: 0.9
+            });
+        },
+        [ready, reduceMotion, stopAnimation, x, xFor]
+    );
+
+    // Measure the available width and card width, then re-center on resize.
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        if (!viewport) return undefined;
+
+        const measure = () => {
+            const card = cardRef.current;
+            if (!card) return;
+
+            const nextWidths = {
+                viewportWidth: viewport.clientWidth,
+                cardWidth: card.offsetWidth
+            };
+
+            setMetrics((current) => {
+                if (
+                    current.viewportWidth === nextWidths.viewportWidth &&
+                    current.cardWidth === nextWidths.cardWidth
+                ) {
+                    return current;
+                }
+                return nextWidths;
+            });
+        };
+
+        measure();
+
+        const observer = new ResizeObserver(measure);
+        observer.observe(viewport);
+        if (cardRef.current) observer.observe(cardRef.current);
+        window.addEventListener('resize', measure);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!ready) return;
+        stopAnimation();
+        x.set(xFor(activeIndexRef.current));
+    }, [ready, metrics.viewportWidth, metrics.cardWidth, stopAnimation, x, xFor]);
+
+    useEffect(() => () => stopAnimation(), [stopAnimation]);
+
+    const handleDragStart = () => {
+        stopAnimation();
+    };
+
+    const handleDragEnd = (_, info) => {
+        if (!ready) return;
+
+        const swipeThreshold = metrics.cardWidth * 0.15;
+        let nextIndex = index;
+
+        if (info.offset.x < -swipeThreshold || info.velocity.x < -450) {
+            nextIndex = index + 1;
+        } else if (info.offset.x > swipeThreshold || info.velocity.x > 450) {
+            nextIndex = index - 1;
+        }
+
+        goTo(nextIndex);
+    };
+
+    const dragConstraints = ready
+        ? { left: xFor(FEATURES.length - 1), right: xFor(0) }
+        : { left: 0, right: 0 };
 
     return (
-        <section 
-            id="features" 
-            ref={containerRef} 
-            className="relative py-16 sm:py-24 overflow-hidden bg-gradient-to-b from-transparent via-[var(--color-paper-2)]/30 to-transparent"
-            aria-label="Features Showcase"
+        <section
+            id="features"
+            className="relative scroll-mt-20 overflow-hidden border-y border-[var(--color-rule)] bg-[var(--color-paper)] py-16 sm:py-24"
+            aria-labelledby="features-title"
         >
-            <div className="max-w-[var(--container)] mx-auto px-4 sm:px-8 lg:px-12 space-y-16 sm:space-y-20">
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-rule)] bg-[var(--color-paper)] text-xs font-semibold text-[var(--color-ink-2)]">
-                        <span className="w-2 h-2 rounded-full bg-[#9FE870]" />
-                        <span>Core Product Suite</span>
-                    </div>
-                    <h2 className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-[var(--color-ink)] leading-tight">
-                        Every tool you need to turn applications into interviews.
-                    </h2>
-                    <p className="text-sm sm:text-base text-[var(--color-ink-2)]">
-                        Six precision workflows engineered to beat keyword filters and prepare you for hiring loops.
-                    </p>
-                </div>
-
-                {/* 3D Perspective Motion Container (Straightens on scroll) */}
-                <div style={{ perspective: reduceMotion ? 'none' : '1200px' }} className="w-full">
-                    <motion.div
-                        style={
-                            reduceMotion
-                                ? {}
-                                : {
-                                      rotateX,
-                                      scale,
-                                      y: translateY,
-                                      opacity,
-                                      transformStyle: 'preserve-3d',
-                                      willChange: 'transform, opacity'
-                                  }
-                        }
-                        className="rounded-2xl sm:rounded-3xl border border-[var(--color-rule)] bg-[var(--color-card)] p-4 sm:p-7 shadow-xl transition-shadow"
-                    >
-                        {/* Tab Switcher */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 p-1.5 rounded-2xl bg-[var(--color-paper-2)]/70 border border-[var(--color-rule)] mb-6">
-                            {interactiveStages.map((feat, idx) => {
-                                const Icon = feat.icon;
-                                const isCurrent = activeFeature === idx;
-                                return (
-                                    <button
-                                        key={feat.id}
-                                        type="button"
-                                        onClick={() => setActiveFeature(idx)}
-                                        className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl text-left transition-all cursor-pointer ${
-                                            isCurrent
-                                                ? 'bg-[var(--color-card)] text-[var(--color-ink)] shadow-xs font-semibold'
-                                                : 'text-[var(--color-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-card)]/50'
-                                        }`}
-                                    >
-                                        <div className={`p-1.5 rounded-lg flex-shrink-0 ${
-                                            isCurrent 
-                                                ? 'bg-[#9FE870] text-[#163300]' 
-                                                : 'bg-[var(--color-paper-3)] text-[var(--color-muted)]'
-                                        }`}>
-                                            <Icon className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="text-xs sm:text-sm font-bold truncate leading-tight">
-                                                {feat.title}
-                                            </div>
-                                            <div className="text-[10px] text-[var(--color-muted)] truncate hidden sm:block">
-                                                {feat.badge}
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Interactive Stage Preview Box */}
-                        <div className="rounded-2xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] p-5 sm:p-6 shadow-inner min-h-[300px]">
-                            {activeFeature === 0 && (
-                                <div className="space-y-4 animate-in fade-in duration-200">
-                                    <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
-                                        <span className="text-xs font-mono font-semibold text-[var(--color-muted)]">
-                                            SEMANTIC EXTRACTION · STAFF SYSTEMS ENGINEER
-                                        </span>
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#9FE870] text-[#163300]">
-                                            92% Match Score
-                                        </span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <span className="text-xs font-semibold text-[var(--color-ink)] block">
-                                            Matched In Resume
-                                        </span>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {['React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'Distributed Systems', 'Redis Caching'].map((s) => (
-                                                <div key={s} className="flex items-center gap-1.5 p-2 rounded-lg bg-[var(--color-card)] border border-emerald-500/20 text-xs text-[var(--color-ink)]">
-                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                                    <span className="truncate">{s}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 pt-1">
-                                        <span className="text-xs font-semibold text-[var(--color-ink)] block">
-                                            Identified Missing Gaps (Injected into Prep Plan)
-                                        </span>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {[
-                                                { name: 'Kubernetes Cluster Architecture', sev: 'Priority Gap' },
-                                                { name: 'Terraform IaC Pipelines', sev: 'Secondary Gap' }
-                                            ].map((g) => (
-                                                <div key={g.name} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-card)] border border-amber-500/20 text-xs">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                                        <span className="font-medium text-[var(--color-ink)]">{g.name}</span>
-                                                    </div>
-                                                    <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono font-semibold">
-                                                        {g.sev}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeFeature === 1 && (
-                                <div className="space-y-3 animate-in fade-in duration-200">
-                                    <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
-                                        <div className="flex items-center gap-2">
-                                            <FileText className="w-4 h-4 text-[#163300] dark:text-[#9FE870]" />
-                                            <span className="text-xs font-mono font-semibold text-[var(--color-ink)]">
-                                                resume_tailored_ats.tex
-                                            </span>
-                                        </div>
-                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                            <span>ATS Grade A+</span>
-                                        </span>
-                                    </div>
-                                    <pre className="p-3.5 rounded-xl bg-zinc-950 font-mono text-xs text-zinc-300 border border-zinc-800 overflow-x-auto leading-relaxed">
-{`\\documentclass[letterpaper,10pt]{article}
-\\usepackage[empty]{fullpage}
-\\begin{document}
-\\section*{Technical Experience}
-\\textbf{Senior Systems Engineer} \\hfill 2023 -- Present \\\\
-\\begin{itemize}
-  \\item Architected transaction ledger handling 45k ops/sec with PostgreSQL \\& Redis.
-  \\item Deployed automated helm charts on AWS EKS to bridge Kubernetes skill gaps.
-\\end{itemize}
-\\end{document}`}
-                                    </pre>
-                                </div>
-                            )}
-
-                            {activeFeature === 2 && (
-                                <div className="space-y-3 animate-in fade-in duration-200">
-                                    <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
-                                        <span className="text-xs font-mono font-semibold text-[var(--color-muted)]">
-                                            TARGETED INTERVIEW PREPARATION
-                                        </span>
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-[#9FE870] text-[#163300]">
-                                            STAR Framework
-                                        </span>
-                                    </div>
-                                    <div className="p-3.5 rounded-xl bg-[var(--color-card)] border border-[var(--color-rule)] space-y-2">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="font-bold text-[#163300] dark:text-[#9FE870]">
-                                                Core System Design Question
-                                            </span>
-                                            <span className="text-[10px] font-mono text-[var(--color-muted)]">Frequency: 92%</span>
-                                        </div>
-                                        <p className="text-xs sm:text-sm font-semibold text-[var(--color-ink)]">
-                                            "How would you ensure webhook idempotency across concurrent payment transactions?"
-                                        </p>
-                                        <p className="text-xs text-[var(--color-ink-2)] bg-[var(--color-paper-3)] p-2 rounded-lg">
-                                            <strong>Key Approach:</strong> Distributed lock via Redis + unique constraint idempotency keys in PostgreSQL.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeFeature === 3 && (
-                                <div className="space-y-3 animate-in fade-in duration-200">
-                                    <div className="flex items-center justify-between pb-3 border-b border-[var(--color-rule)]">
-                                        <span className="text-xs font-mono font-semibold text-[var(--color-muted)]">
-                                            SAVED JOBS PIPELINE
-                                        </span>
-                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                            1-Click Prep Sync
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2.5 text-xs">
-                                        <div className="p-3 rounded-xl bg-[var(--color-card)] border border-[var(--color-rule)] space-y-1">
-                                            <div className="text-[10px] font-mono font-bold text-[var(--color-muted)]">WISHLIST (2)</div>
-                                            <div className="font-semibold text-[var(--color-ink)] truncate">Linear</div>
-                                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">89% Match</div>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-[var(--color-card)] border border-[var(--color-rule)] space-y-1">
-                                            <div className="text-[10px] font-mono font-bold text-[var(--color-muted)]">APPLIED (3)</div>
-                                            <div className="font-semibold text-[var(--color-ink)] truncate">Datadog</div>
-                                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">94% Match</div>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-[var(--color-card)] border border-[#9FE870]/50 space-y-1 shadow-xs">
-                                            <div className="text-[10px] font-mono font-bold text-[#163300] dark:text-[#9FE870]">INTERVIEW (1)</div>
-                                            <div className="font-semibold text-[var(--color-ink)] truncate">Stripe</div>
-                                            <div className="text-[10px] text-[#163300] dark:text-[#9FE870] font-bold">Prep Ready</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* ── 6-Feature Visual Bento Grid with Spotlight Hover Glow ── */}
-                <div className="space-y-6">
-                    <div className="text-center max-w-xl mx-auto space-y-1.5">
-                        <h3 className="text-xl sm:text-2xl font-bold font-display text-[var(--color-ink)]">
-                            All 6 StackMatch Capabilities
-                        </h3>
-                        <p className="text-xs sm:text-sm text-[var(--color-ink-2)]">
-                            Compact visual previews of everything in your workspace.
+            <div className="mx-auto max-w-[var(--container)] px-4 sm:px-8 lg:px-12">
+                <Reveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+                    <div className="max-w-xl">
+                        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                            Features
                         </p>
+                        <h2
+                            id="features-title"
+                            className="mt-2 font-display text-3xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-4xl"
+                        >
+                            Six tools, one application.
+                        </h2>
+                    </div>
+                    <p className="max-w-xs text-sm leading-relaxed text-[var(--color-ink-2)]">
+                        Swipe through the deck or use the arrows.
+                    </p>
+                </Reveal>
+
+                <Reveal delay={0.08} className="mt-8 sm:mt-10">
+                    <div
+                        ref={viewportRef}
+                        className="relative overflow-hidden py-4"
+                        role="region"
+                        aria-roledescription="carousel"
+                        aria-label="StackMatch features"
+                    >
+                        <motion.div
+                            drag={ready ? 'x' : false}
+                            dragConstraints={dragConstraints}
+                            dragElastic={0.08}
+                            dragMomentum={false}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            style={{ x, gap: `${DECK_GAP}px`, touchAction: 'pan-y' }}
+                            className={`flex w-full cursor-grab active:cursor-grabbing ${
+                                ready ? 'opacity-100' : 'opacity-0'
+                            } transition-opacity duration-300`}
+                        >
+                            {FEATURES.map((feature, featureIndex) => (
+                                <FeatureCard
+                                    key={feature.id}
+                                    feature={feature}
+                                    isActive={index === featureIndex}
+                                    innerRef={featureIndex === 0 ? cardRef : undefined}
+                                    reduceMotion={reduceMotion}
+                                />
+                            ))}
+                        </motion.div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {/* 1. ATS Keyword Heatmap */}
-                        <SpotlightCard delay={0} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <Layers className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                        88% Semantic Match
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    ATS Keyword Heatmap
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    Live matched skills vs. prioritized gap tags extracted from any JD.
-                                </p>
-                            </div>
+                    <p className="sr-only" aria-live="polite">
+                        Feature {index + 1} of {FEATURES.length}: {FEATURES[index].title}
+                    </p>
 
-                            {/* Mini UI Preview */}
-                            <div className="p-3 rounded-xl bg-[var(--color-paper-2)]/60 border border-[var(--color-rule)] space-y-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                                        ✓ React 19
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                                        ✓ TypeScript
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                                        ✓ PostgreSQL
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                                        ! Kubernetes (High Gap)
-                                    </span>
-                                </div>
-                            </div>
-                        </SpotlightCard>
+                    <div className="mt-5 flex flex-col gap-4 border-t border-[var(--color-rule)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center justify-between gap-4 sm:justify-start">
+                            <span className="font-mono text-[11px] font-semibold tabular-nums text-[var(--color-muted)]">
+                                {String(index + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')}
+                            </span>
 
-                        {/* 2. Overleaf .tex & ATS PDF Export */}
-                        <SpotlightCard delay={0.08} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <Code2 className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#9FE870] text-[#163300]">
-                                        Overleaf 1-Click
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    Overleaf .tex & ATS PDF
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    Single-column publication-grade LaTeX that never breaks ATS parsers.
-                                </p>
-                            </div>
-
-                            {/* Mini UI Preview */}
-                            <div className="p-2.5 rounded-xl bg-zinc-950 font-mono text-[10px] text-zinc-300 border border-zinc-800 space-y-1">
-                                <div className="text-zinc-500">// resume.tex</div>
-                                <div className="text-[#9FE870]">\documentclass[10pt]{'{'}article{'}'}</div>
-                                <div className="truncate">\item Optimized ledger to 45k ops/sec</div>
-                            </div>
-                        </SpotlightCard>
-
-                        {/* 3. Outreach Hub */}
-                        <SpotlightCard delay={0.16} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <Send className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[var(--color-paper-2)] text-[var(--color-ink)]">
-                                        Direct Tone
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    Outreach Hub
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    High-converting LinkedIn referral DMs, cold emails, and cover letters.
-                                </p>
-                            </div>
-
-                            {/* Mini UI Preview */}
-                            <div className="p-3 rounded-xl bg-[var(--color-paper-2)]/60 border border-[var(--color-rule)] space-y-1.5 text-xs">
-                                <div className="flex items-center justify-between text-[10px] text-[var(--color-muted)] font-mono">
-                                    <span>Referral DM</span>
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">84 words</span>
-                                </div>
-                                <p className="text-[11px] text-[var(--color-ink-2)] line-clamp-2 leading-relaxed italic">
-                                    "Hi Sarah — saw the Staff role at Stripe. Scaled our distributed transaction ledger to 45k ops/sec..."
-                                </p>
-                            </div>
-                        </SpotlightCard>
-
-                        {/* 4. Resume Lab */}
-                        <SpotlightCard delay={0.24} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <FlaskConical className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#9FE870] text-[#163300]">
-                                        91 / 100 Score
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    Resume Lab
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    Standalone ATS health audit and Google XYZ bullet enhancer.
-                                </p>
-                            </div>
-
-                            {/* Mini UI Preview */}
-                            <div className="p-3 rounded-xl bg-[var(--color-paper-2)]/60 border border-[var(--color-rule)] space-y-1.5 text-xs">
-                                <div className="text-[10px] text-zinc-400 line-through">
-                                    Helped with checkout page performance
-                                </div>
-                                <div className="text-[11px] font-semibold text-[#163300] dark:text-[#9FE870] leading-snug">
-                                    → Accelerated checkout flow by 38% for 2M users via Redis caching
-                                </div>
-                            </div>
-                        </SpotlightCard>
-
-                        {/* 5. Location-Filtered Jobs */}
-                        <SpotlightCard delay={0.32} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <MapPin className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[var(--color-paper-2)] text-[var(--color-ink)]">
-                                        Active Scraper
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    Location-Filtered Jobs
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    Real-time job matching across India tech hubs and remote roles.
-                                </p>
-                            </div>
-
-                            {/* Mini UI Preview */}
-                            <div className="p-2.5 rounded-xl bg-[var(--color-paper-2)]/60 border border-[var(--color-rule)] space-y-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {['All India', 'Remote', 'Bengaluru', 'Hyderabad'].map((loc, i) => (
-                                        <span
-                                            key={loc}
-                                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                                i === 0
-                                                    ? 'bg-[#9FE870] text-[#163300] font-bold'
-                                                    : 'bg-[var(--color-card)] text-[var(--color-muted)]'
-                                            }`}
+                            <div className="flex items-center" aria-label="Choose a feature">
+                                {FEATURES.map((feature, featureIndex) => {
+                                    const isActive = index === featureIndex;
+                                    return (
+                                        <button
+                                            key={feature.id}
+                                            type="button"
+                                            onClick={() => goTo(featureIndex)}
+                                            aria-label={`Show ${feature.title}`}
+                                            aria-current={isActive ? 'true' : undefined}
+                                            className="group flex h-9 w-6 items-center justify-center"
                                         >
-                                            {loc}
-                                        </span>
-                                    ))}
-                                </div>
+                                            <span
+                                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                                    isActive
+                                                        ? 'w-5 bg-[#163300] dark:bg-[#9FE870]'
+                                                        : 'w-1.5 bg-[var(--color-rule)] group-hover:bg-[#9FE870]'
+                                                }`}
+                                            />
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        </SpotlightCard>
+                        </div>
 
-                        {/* 6. STAR Interview Practice */}
-                        <SpotlightCard delay={0.4} reduceMotion={reduceMotion}>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="p-2 rounded-xl bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                        Score: 9.4 / 10
-                                    </span>
-                                </div>
-                                <h4 className="font-bold text-sm text-[var(--color-ink)]">
-                                    STAR Interview Practice
-                                </h4>
-                                <p className="text-xs text-[var(--color-ink-2)]">
-                                    Practice draft answers with instant readiness scoring and feedback.
-                                </p>
+                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+                            <div className="ml-auto flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => goTo(index - 1)}
+                                    disabled={index === 0}
+                                    aria-label="Previous feature"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] text-[var(--color-ink)] transition-colors hover:border-[#9FE870] hover:bg-[#9FE870] hover:text-[#163300] disabled:pointer-events-none disabled:opacity-30"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => goTo(index + 1)}
+                                    disabled={index === FEATURES.length - 1}
+                                    aria-label="Next feature"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-rule)] bg-[var(--color-card)] text-[var(--color-ink)] transition-colors hover:border-[#9FE870] hover:bg-[#9FE870] hover:text-[#163300] disabled:pointer-events-none disabled:opacity-30"
+                                >
+                                    <ArrowRight className="h-4 w-4" />
+                                </button>
                             </div>
-
-                            {/* Mini UI Preview */}
-                            <div className="p-3 rounded-xl bg-[var(--color-paper-2)]/60 border border-[var(--color-rule)] space-y-2 text-xs">
-                                <div className="flex items-center justify-between text-[10px] font-mono text-[var(--color-muted)]">
-                                    <span>STAR Checklist</span>
-                                    <span className="text-[#163300] dark:text-[#9FE870] font-bold">4/4 Passed</span>
-                                </div>
-                                <div className="grid grid-cols-4 gap-1 text-center font-mono text-[10px] font-bold">
-                                    <span className="p-1 rounded bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">S ✓</span>
-                                    <span className="p-1 rounded bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">T ✓</span>
-                                    <span className="p-1 rounded bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">A ✓</span>
-                                    <span className="p-1 rounded bg-[#9FE870]/20 text-[#163300] dark:text-[#9FE870]">R ✓</span>
-                                </div>
-                            </div>
-                        </SpotlightCard>
+                        </div>
                     </div>
-                </div>
+                </Reveal>
             </div>
         </section>
     );

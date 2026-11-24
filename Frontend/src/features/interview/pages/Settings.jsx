@@ -36,32 +36,32 @@ import { updatePassword } from '../../auth/services/auth.api';
 
 // provider choices
 const PROVIDER_OPTIONS = [
-    { id: 'default', label: 'System Default (Gemini)' },
-    { id: 'openai', label: 'OpenAI (GPT-3.5/4o)' },
-    { id: 'gemini', label: 'Google Gemini (Custom Key)' },
+    { id: 'default', label: 'System default (Gemini)' },
+    { id: 'openai', label: 'OpenAI' },
+    { id: 'gemini', label: 'Google Gemini' },
     { id: 'groq', label: 'Groq Cloud' },
-    { id: 'ollama', label: 'Ollama (Local AI)' }
+    { id: 'ollama', label: 'Ollama (local)' }
 ];
 
 // openai model choices
 const OPENAI_MODELS = [
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast & Recommended)' },
-    { id: 'gpt-4o', name: 'GPT-4o (Flagship Multimodal)' },
-    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Legacy)' }
+    { id: 'gpt-4o-mini', name: 'GPT-4o mini' },
+    { id: 'gpt-4o', name: 'GPT-4o' },
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
 ];
 
 // gemini model choices
 const GEMINI_MODELS = [
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommended)' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Deep Reasoning)' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Legacy)' }
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
 ];
 
 // groq model choices — current Llama-3 lineup (Mixtral removed: deprecated on Groq)
 const GROQ_MODELS = [
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile (Recommended)' },
-    { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B Versatile' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant (Fast)' }
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+    { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B' }
 ];
 
 // settings view for api keys, theme, and password
@@ -133,7 +133,7 @@ const Settings = () => {
     const handleSaveAiConfig = () => {
         // require api key for cloud providers
         if (['openai', 'gemini', 'groq'].includes(selectedProvider) && !apiKey.trim()) {
-            addToast(`Please provide a valid API key for ${selectedProvider.toUpperCase()}.`, "warning");
+            addToast(`Enter an API key for ${selectedProvider.toUpperCase()}.`, "warning");
             return;
         }
 
@@ -147,7 +147,7 @@ const Settings = () => {
 
         // persist in localstorage
         saveByokConfig(configToSave);
-        addToast(`AI Engine settings saved! Active Provider: ${selectedProvider.toUpperCase()}`, "success");
+        addToast("AI settings saved.", "success");
     };
 
     // reset ai settings back to system default
@@ -164,7 +164,7 @@ const Settings = () => {
         setApiKey('');
         setSelectedModel('');
         setOllamaEndpoint('http://localhost:11434');
-        addToast("Reset to system default AI provider.", "info");
+        addToast("Reset to system default.", "info");
     };
 
     // test local ollama connection
@@ -199,13 +199,13 @@ const Settings = () => {
 
         // check password confirmation
         if (newPassword !== confirmPassword) {
-            addToast("New password and confirmation password do not match.", "warning");
+            addToast("Passwords do not match.", "warning");
             return;
         }
 
         // check length
         if (newPassword.length < 6) {
-            addToast("New password must be at least 6 characters long.", "warning");
+            addToast("Password must be at least 6 characters.", "warning");
             return;
         }
 
@@ -216,7 +216,7 @@ const Settings = () => {
                 currentPassword,
                 newPassword
             });
-            addToast("Password changed successfully!", "success");
+            addToast("Password updated.", "success");
             // clear form
             setCurrentPassword('');
             setNewPassword('');
@@ -258,19 +258,16 @@ const Settings = () => {
                         <div className="flex items-center gap-2.5">
                             <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                AI Provider Selection
+                                AI provider
                             </h2>
                         </div>
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-                            Client-Side BYOK Encrypted
+                        <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                            Stored locally
                         </span>
                     </div>
 
                     {/* provider selector dropdown */}
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
-                            Choose AI Engine
-                        </label>
                         <select
                             value={selectedProvider}
                             onChange={handleProviderChange}
@@ -283,11 +280,11 @@ const Settings = () => {
                             ))}
                         </select>
                         <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {selectedProvider === 'default' && 'Hosted Google Gemini credentials managed by the server.'}
-                            {selectedProvider === 'openai' && 'Direct client-side generation using your personal OpenAI API Key.'}
-                            {selectedProvider === 'gemini' && 'Direct requests using your Google AI Studio Gemini API Key.'}
-                            {selectedProvider === 'groq' && 'Ultra-low latency inference via Groq LPUs.'}
-                            {selectedProvider === 'ollama' && '100% private, on-device generation running locally on your hardware.'}
+                            {selectedProvider === 'default' && 'Uses the default Gemini key.'}
+                            {selectedProvider === 'openai' && 'Uses your OpenAI key.'}
+                            {selectedProvider === 'gemini' && 'Uses your Google AI Studio key.'}
+                            {selectedProvider === 'groq' && 'Uses your Groq key.'}
+                            {selectedProvider === 'ollama' && 'Runs on your machine.'}
                         </p>
                     </div>
 
@@ -316,7 +313,7 @@ const Settings = () => {
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-1">
-                                    <span>Direct client-side requests to <code>https://api.openai.com/v1/chat/completions</code>.</span>
+                                    <span>Requests go directly to OpenAI.</span>
                                     <a 
                                         href="https://platform.openai.com/api-keys" 
                                         target="_blank" 
@@ -373,7 +370,7 @@ const Settings = () => {
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-1">
-                                    <span>Stored locally in browser and attached via request headers.</span>
+                                    <span>Stored in your browser.</span>
                                     <a 
                                         href="https://aistudio.google.com/app/apikey" 
                                         target="_blank" 
@@ -430,7 +427,7 @@ const Settings = () => {
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-1">
-                                    <span>Sub-second response speed powered by Groq LPUs.</span>
+                                    <span>Stored in your browser.</span>
                                     <a 
                                         href="https://console.groq.com/keys" 
                                         target="_blank" 
@@ -470,10 +467,10 @@ const Settings = () => {
                             <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
                                 <div className="flex items-center gap-1.5 font-semibold">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                                    <span>100% Local On-Device Inference</span>
+                                    <span>Runs locally</span>
                                 </div>
                                 <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                                    When Ollama is selected, the application communicates directly with your machine at <code>http://localhost:11434/api/generate</code>.
+                                    Talks to Ollama at <code>http://localhost:11434</code>.
                                 </p>
                             </div>
 
@@ -481,7 +478,7 @@ const Settings = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
-                                        Local Endpoint URL
+                                        Endpoint
                                     </label>
                                     <input
                                         type="text"
@@ -494,7 +491,7 @@ const Settings = () => {
 
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
-                                        Model Name
+                                        Model
                                     </label>
                                     <input
                                         type="text"
@@ -515,10 +512,10 @@ const Settings = () => {
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-medium text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
                                 >
                                     <Server className="w-3.5 h-3.5" />
-                                    <span>{testingOllama ? "Testing Connection..." : "Test Local Endpoint"}</span>
+                                    <span>{testingOllama ? "Testing..." : "Test connection"}</span>
                                 </button>
                                 <span className="text-[11px] text-zinc-400 font-mono">
-                                    Run 'ollama serve' in background
+                                    Run ollama serve first
                                 </span>
                             </div>
                         </div>
@@ -542,7 +539,7 @@ const Settings = () => {
                         className="wise-primary-pill"
                     >
                         <Save className="w-3.5 h-3.5" />
-                        <span>Save Configuration</span>
+                        <span>Save</span>
                     </button>
                 </div>
             </div>
@@ -579,11 +576,8 @@ const Settings = () => {
                 <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
                     <div className="flex items-center gap-2.5">
                         <User className="w-4 h-4 text-indigo-500" />
-                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Account Information</h2>
+                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Profile</h2>
                     </div>
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-                        Active Profile
-                    </span>
                 </div>
 
                 {/* read-only profile overview */}
@@ -607,12 +601,9 @@ const Settings = () => {
                     <div className="flex items-center gap-2">
                         <Lock className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                            Change Password
+                            Change password
                         </h3>
                     </div>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Ensure your account stays secure by using a strong password of at least 6 characters.
-                    </p>
 
                     <form onSubmit={handlePasswordUpdate} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -665,7 +656,7 @@ const Settings = () => {
                             {/* confirm password */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block">
-                                    Confirm New Password
+                                    Confirm password
                                 </label>
                                 <div className="relative">
                                     <input
@@ -694,7 +685,7 @@ const Settings = () => {
                                 className="wise-primary-pill disabled:opacity-50"
                             >
                                 <Key className="w-3.5 h-3.5" />
-                                <span>{isUpdatingPassword ? "Updating..." : "Update Password"}</span>
+                                <span>{isUpdatingPassword ? "Updating..." : "Update password"}</span>
                             </button>
                         </div>
                     </form>
@@ -720,7 +711,7 @@ const Settings = () => {
 
             <div className="danger-zone-card p-6 rounded-2xl border border-red-500/25 bg-white dark:bg-zinc-900 flex items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Danger Zone</h2>
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Danger zone</h2>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                         Permanently delete your account and saved data.
                     </p>

@@ -125,21 +125,18 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <Layers className="w-4 h-4 text-indigo-500" />
-                            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider font-mono">
-                                Resume Keyword Heatmap
+                            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                Keyword heatmap
                             </h3>
                         </div>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Comparative ATS density scan of required job listing skills against candidate profile.
-                        </p>
                     </div>
 
                     {/* ATS Keyword Match Health Badge */}
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 font-mono text-xs">
-                            <span className="text-zinc-500 dark:text-zinc-400">ATS Density:</span>
+                            <span className="text-zinc-500 dark:text-zinc-400">ATS match:</span>
                             <span className={`font-semibold ${stats.rate >= 75 ? 'text-emerald-600 dark:text-emerald-400' : stats.rate >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                                {stats.rate}% Matched
+                                {stats.rate}%
                             </span>
                         </div>
                     </div>
@@ -164,7 +161,7 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
                             onClick={() => setActiveFilter("missing")}
                             className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${activeFilter === "missing" ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 shadow-xs" : "text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400"}`}
                         >
-                            Missing Gaps ({stats.missing})
+                            Missing ({stats.missing})
                         </button>
                     </div>
 
@@ -185,7 +182,7 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
             <div className="p-5 sm:p-6">
                 {filteredKeywords.length === 0 ? (
                     <div className="text-center py-8 text-xs text-zinc-400">
-                        No keywords matching filter criteria.
+                        No keywords found.
                     </div>
                 ) : (
                     <div className="flex flex-wrap gap-2.5">
@@ -230,13 +227,13 @@ export const ResumeKeywordHeatmap = ({ resumeText = "", jobDescription = "", ski
                                 Context for "{selectedKeyword.term}"
                             </span>
                             <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium uppercase ${selectedKeyword.isMatched ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'}`}>
-                                {selectedKeyword.isMatched ? 'Verified in Profile' : `Missing Requirement (${selectedKeyword.severity} impact)`}
+                                {selectedKeyword.isMatched ? 'Matched' : 'Missing'}
                             </span>
                         </div>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
                             {selectedKeyword.isMatched
-                                ? `This keyword occurs ${selectedKeyword.jdFrequency} time(s) in the target Job Description and was found in your resume. Keep this competency clearly highlighted in your project bullet points.`
-                                : `This skill appears ${selectedKeyword.jdFrequency} time(s) in the job description but was not detected in your resume text. Consider adding relevant coursework, personal projects, or direct experience with ${selectedKeyword.term} to boost ATS pass-through.`}
+                                ? `Found in your resume. Mentioned ${selectedKeyword.jdFrequency} time(s) in the job description.`
+                                : `Not found in your resume. Mentioned ${selectedKeyword.jdFrequency} time(s) in the job description.`}
                         </p>
                     </div>
                 )}

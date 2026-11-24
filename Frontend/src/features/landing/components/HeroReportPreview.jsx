@@ -23,13 +23,13 @@ export const HeroReportPreview = () => {
 \\usepackage[empty]{fullpage}
 \\usepackage{titlesec}
 \\usepackage{hyperref}
-% ATS Optimized Single Column Layout
+% ATS single-column layout
 \\begin{document}
 \\begin{center}
   {\\Huge \\textbf{Alex Mercer}} \\\\
   \\small \\href{mailto:alex@example.com}{alex@example.com} | (555) 019-2834 | San Francisco, CA
 \\end{center}
-% Tailored Skills Section
+% Skills
 \\section*{Technical Skills}
 \\textbf{Languages & Frameworks:} React 19, TypeScript, Node.js, Next.js, Python \\\\
 \\textbf{Architecture & Cloud:} RESTful APIs, Microservices, PostgreSQL, Redis, AWS
@@ -39,7 +39,7 @@ export const HeroReportPreview = () => {
     };
 
     return (
-        <div className="w-full rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] shadow-xl overflow-hidden text-left transition-all">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-[var(--color-rule)] bg-[var(--color-card)] shadow-xl overflow-hidden text-left transition-all">
             {/* Top Bar resembling browser/app view */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-[var(--color-rule)] bg-[var(--color-paper-2)]/60 text-xs">
                 <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export const HeroReportPreview = () => {
                 <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#9FE870] text-[#163300] font-semibold text-[11px]">
                         <ShieldCheck className="w-3 h-3" />
-                        ATS Grade A+
+                        ATS ready
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-card)] border border-[var(--color-rule)] text-[var(--color-ink-2)] text-[11px] font-mono">
                         Overleaf Ready
@@ -78,7 +78,7 @@ export const HeroReportPreview = () => {
                             Staff Full-Stack & Systems Engineer
                         </h3>
                         <p className="text-xs sm:text-sm text-[var(--color-muted)]">
-                            Benchmarked against JD: 28 requirements scanned · 23 matched · 3 gap items prioritized
+                            Benchmarked against JD: 28 requirements scanned · 23 matched · 3 gaps
                         </p>
                     </div>
 
@@ -109,10 +109,10 @@ export const HeroReportPreview = () => {
                         </div>
                         <div>
                             <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--color-muted)] block">
-                                ATS Fit Score
+                                ATS score
                             </span>
                             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                High Probability Match
+                                Strong match
                             </span>
                         </div>
                     </div>
@@ -121,7 +121,7 @@ export const HeroReportPreview = () => {
                 {/* Sub-actions toolbar */}
                 <div className="mt-4 pt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-rule)]/60">
                     {/* Tabs */}
-                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--color-paper-2)] border border-[var(--color-rule)]">
+                    <div className="flex max-w-full flex-wrap items-center gap-1.5 rounded-xl border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-1">
                         <button
                             type="button"
                             onClick={() => setActiveTab('heatmap')}
@@ -147,7 +147,7 @@ export const HeroReportPreview = () => {
                             }`}
                         >
                             <Code2 className="w-3.5 h-3.5" />
-                            <span>Domain Questions</span>
+                            <span>Questions</span>
                             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--color-paper-3)] text-[var(--color-muted)] font-mono">
                                 5
                             </span>
@@ -162,7 +162,7 @@ export const HeroReportPreview = () => {
                             }`}
                         >
                             <FileDown className="w-3.5 h-3.5" />
-                            <span>Tailored LaTeX (.tex)</span>
+                            <span>LaTeX (.tex)</span>
                         </button>
                     </div>
 
@@ -174,7 +174,7 @@ export const HeroReportPreview = () => {
                             title="Export PDF"
                         >
                             <FileDown className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
-                            <span>ATS Single-Column PDF</span>
+                            <span>PDF</span>
                         </button>
                         <button
                             type="button"
@@ -195,17 +195,17 @@ export const HeroReportPreview = () => {
                     <div className="space-y-4 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-semibold text-[var(--color-ink)]">
-                                Core JD Keywords Extracted (Semantic Match)
+                                Job keywords
                             </span>
                             <span className="text-[var(--color-muted)]">
-                                7 Matched · 2 Identified Gaps to Address
+                                7 matched · 2 gaps
                             </span>
                         </div>
 
                         {/* Matched Chips */}
                         <div>
                             <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold mb-2 block">
-                                Verified in Your Resume (High Density)
+                                Matched in your resume
                             </span>
                             <div className="flex flex-wrap gap-2">
                                 {[
@@ -234,12 +234,12 @@ export const HeroReportPreview = () => {
                         {/* Gaps to address */}
                         <div className="pt-2">
                             <span className="text-[11px] font-mono uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold mb-2 block">
-                                Gaps Highlighted in Job Description
+                                Missing from your resume
                             </span>
                             <div className="flex flex-wrap gap-2">
                                 {[
-                                    { name: 'Kubernetes Cluster Management', note: 'Priority Gap · Prep answer provided' },
-                                    { name: 'Terraform / IaC', note: 'Mentioned in JD infra section' },
+                                    { name: 'Kubernetes Cluster Management', note: 'Priority gap' },
+                                    { name: 'Terraform / IaC', note: 'In the JD' },
                                 ].map((item) => (
                                     <span
                                         key={item.name}
@@ -259,7 +259,7 @@ export const HeroReportPreview = () => {
                         <div className="mt-3 p-3.5 rounded-xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] text-xs text-[var(--color-ink-2)] flex items-start gap-2.5">
                             <Target className="w-4 h-4 text-[#163300] dark:text-[#9FE870] flex-shrink-0 mt-0.5" />
                             <div>
-                                <strong className="text-[var(--color-ink)] font-semibold">StackMatch Recommendation:</strong> Your frontend and systems foundation aligns 100% with the hiring manager's requirements. We injected targeted talking points for Kubernetes container orchestration in your tailored resume and Q&A roadmap.
+                                <strong className="text-[var(--color-ink)] font-semibold">Recommendation:</strong> Your resume matches the core stack. Add one Kubernetes project to close the top gap.
                             </div>
                         </div>
                     </div>
@@ -268,7 +268,7 @@ export const HeroReportPreview = () => {
                 {activeTab === 'questions' && (
                     <div className="space-y-3 animate-in fade-in duration-200">
                         <div className="text-xs font-semibold text-[var(--color-ink)] mb-1">
-                            Tailored Interview Questions for this Role
+                            Likely interview questions
                         </div>
                         {[
                             {
@@ -285,12 +285,12 @@ export const HeroReportPreview = () => {
                             <div key={idx} className="p-3.5 rounded-xl border border-[var(--color-rule)] bg-[var(--color-paper-3)] space-y-2">
                                 <div className="flex items-center justify-between text-[11px]">
                                     <span className="font-mono text-[var(--color-muted)] font-semibold">Q{idx + 1} · {item.topic}</span>
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium">Likely Question</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium">Likely question</span>
                                 </div>
                                 <h4 className="text-sm font-semibold text-[var(--color-ink)]">{item.q}</h4>
                                 <div className="text-xs text-[var(--color-ink-2)] bg-[var(--color-card)] p-2.5 rounded-lg border border-[var(--color-rule)] flex items-start gap-2">
                                     <Compass className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870] flex-shrink-0 mt-0.5" />
-                                    <span><strong>Target Angle:</strong> {item.tip}</span>
+                                    <span><strong>Answer angle:</strong> {item.tip}</span>
                                 </div>
                             </div>
                         ))}
@@ -301,7 +301,7 @@ export const HeroReportPreview = () => {
                     <div className="space-y-3 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between text-xs">
                             <span className="font-mono text-[var(--color-muted)]">resume_stripe_staff_v1.tex</span>
-                            <span className="text-xs text-[#163300] dark:text-[#9FE870] font-semibold">Overleaf 1-Click Compatible</span>
+                            <span className="text-xs text-[#163300] dark:text-[#9FE870] font-semibold">Overleaf ready</span>
                         </div>
                         <pre className="p-4 rounded-xl border border-[var(--color-rule)] bg-zinc-950 text-zinc-100 font-mono text-xs overflow-x-auto leading-relaxed selection:bg-[#9FE870] selection:text-[#163300]">
 {`\\documentclass[letterpaper,10pt]{article}
@@ -315,7 +315,7 @@ export const HeroReportPreview = () => {
 \\addtolength{\\textwidth}{1in}
 
 \\begin{document}
-\\section*{Selected Experience Tailored for Stripe Core}
+\\section*{Selected Experience}
 \\textbf{Senior Full-Stack Engineer} \\hfill Jan 2023 -- Present \\\\
 \\textit{FinTech Infrastructure Corp} \\hfill San Francisco, CA
 \\begin{itemize}

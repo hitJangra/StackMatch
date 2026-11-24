@@ -12,13 +12,12 @@ const NotFound = () => {
         <main className="auth-page">
             <div className="auth-card text-center">
                 <h1 className="text-5xl font-extrabold text-[#163300] dark:text-[#9FE870] m-0">404</h1>
-                <p className="text-lg font-semibold mt-4 mb-2">Page not found</p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">This page does not exist.</p>
+                <p className="text-lg font-semibold mt-4 mb-6">Page not found</p>
                 <button
                     className="wise-primary-pill"
                     onClick={() => navigate('/')}
                 >
-                    Go Home
+                    Go home
                 </button>
             </div>
         </main>

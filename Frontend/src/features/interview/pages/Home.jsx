@@ -92,7 +92,7 @@ const Home = () => {
         // check if user clicked "Match & Prep" from Jobs page
         if (location.state?.jobDescription) {
             setJobDescription(location.state.jobDescription);
-            addToast("Target job description loaded!", "info");
+            addToast("Job description loaded.", "info");
         } else if (location.state?.targetJob) {
             const tj = location.state.targetJob;
             setJobDescription(tj.description || `${tj.title} at ${tj.company}`);
@@ -198,7 +198,7 @@ const Home = () => {
 
         try {
             const data = await generateReport({ jobDescription, resumeFile });
-            addToast("Interview plan generated!", "success");
+            addToast("Report generated.", "success");
             navigate(`/interview/${data._id}`);
         } catch (err) {
             addToast(err?.response?.data?.message || "Failed to generate report. Please try again.", "error");
@@ -218,7 +218,7 @@ const Home = () => {
 
         try {
             setAnalyzingResume(true);
-            addToast("Analysing resume for target roles…", "info");
+            addToast("Analyzing resume...", "info");
 
             const formData = new FormData();
             formData.append("resume", resumeFile);
@@ -249,9 +249,9 @@ const Home = () => {
             }
 
             if (!fetchedJobs.length) {
-                addToast("No live jobs found for this profile right now.", "info");
+                addToast("No jobs found right now.", "info");
             } else {
-                addToast(`Found ${fetchedJobs.length} recommendations!`, "success");
+                addToast(`Found ${fetchedJobs.length} jobs.`, "success");
                 setTimeout(() => {
                     document.getElementById("job-recommendations")?.scrollIntoView({ behavior: "smooth" });
                 }, 300);
@@ -284,7 +284,7 @@ const Home = () => {
                 jobDescription: jobDesc,
                 resumeFile
             });
-            addToast("Interview plan generated!", "success");
+            addToast("Report generated.", "success");
             navigate(`/interview/${data._id}`);
         } catch (err) {
             addToast(err?.response?.data?.message || "Failed to generate report.", "error");
@@ -414,7 +414,7 @@ const Home = () => {
                         >
                             <motion.div layout className="p-6 sm:p-7" transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-sm font-semibold">Your Candidate Resume</h2>
+                                    <h2 className="text-sm font-semibold">Your resume</h2>
                                     <span className="wise-label">PDF</span>
                                 </div>
                                 <label
@@ -494,7 +494,7 @@ const Home = () => {
                 <section id="job-recommendations" className="space-y-4 pt-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                            Live Recommended Jobs
+                            Recommended jobs
                         </h2>
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">
                             Showing <span className="font-semibold text-zinc-900 dark:text-zinc-100">{filteredRecommendedJobs.length}</span> of {recommendedJobs.length} roles
@@ -613,10 +613,8 @@ const Home = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-                                Previous Scans
+                                Recent reports
                             </h2>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            </p>
                         </div>
                         <button
                             onClick={() => navigate('/saved-jobs')}
@@ -637,7 +635,7 @@ const Home = () => {
                                 <div className="space-y-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                            {r.title || 'Untitled Assessment'}
+                                            {r.title || 'Untitled report'}
                                         </h3>
                                     </div>
                                     <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">

@@ -86,10 +86,9 @@ export const LocationFilterBar = ({
     };
 
     return (
-        <div className={`flex flex-wrap items-center gap-2 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs ${className}`}>
+        <div role="group" aria-label="Filter by location" className={`flex flex-wrap items-center gap-2 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs ${className}`}>
             <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 mr-1 flex-shrink-0">
-                <MapPin className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
-                <span className="hidden sm:inline">Location:</span>
+                <MapPin className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" aria-hidden="true" />
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">

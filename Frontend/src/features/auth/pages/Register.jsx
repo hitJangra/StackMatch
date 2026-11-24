@@ -102,11 +102,8 @@ const Register = () => {
                     <div className="text-center space-y-2">
                         <StackMatchLogo compact />
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                            Create an Account
+                            Create an account
                         </h1>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Create your StackMatch account
-                        </p>
                     </div>
 
                     {/* signup form */}

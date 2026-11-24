@@ -23,26 +23,22 @@ const OUTREACH_TABS = [
     {
         id: 'referral_dm',
         label: 'Referral DM',
-        icon: MessageSquare,
-        description: 'Short, non-cringe LinkedIn referral outreach under 100 words.'
+        icon: MessageSquare
     },
     {
         id: 'cold_email',
         label: 'Cold Email',
-        icon: Mail,
-        description: 'Concise cold email with high-converting subject line.'
+        icon: Mail
     },
     {
         id: 'cover_letter',
         label: 'Cover Letter',
-        icon: FileText,
-        description: '3-paragraph tailored cover letter with hard proof points.'
+        icon: FileText
     },
     {
         id: 'app_qa',
         label: 'App Q&A',
-        icon: HelpCircle,
-        description: 'First-person answers to portal questions & elevator pitches.'
+        icon: HelpCircle
     }
 ];
 
@@ -117,7 +113,7 @@ export const Outreach = () => {
     const handleGenerate = async (e) => {
         e?.preventDefault();
         if (!role.trim() && !company.trim()) {
-            addToast('Please enter at least a Role or Company name.', 'warning');
+            addToast('Enter a role or company.', 'warning');
             return;
         }
 
@@ -135,7 +131,7 @@ export const Outreach = () => {
 
             setGeneratedSubject(data.subject || '');
             setGeneratedContent(data.content || '');
-            addToast('Outreach copy generated!', 'success');
+            addToast('Outreach generated.', 'success');
         } catch (err) {
             console.error(err);
             addToast(err?.response?.data?.message || 'Failed to generate outreach. Please try again.', 'error');
@@ -153,7 +149,7 @@ export const Outreach = () => {
         if (!textToCopy) return;
         navigator.clipboard?.writeText(textToCopy);
         setCopied(true);
-        addToast('Copied to clipboard!', 'success');
+        addToast('Copied.', 'success');
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -177,7 +173,7 @@ export const Outreach = () => {
                             onChange={(e) => handleSelectSavedJob(e.target.value)}
                             className="text-xs rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 py-2 px-3 focus:outline-none focus:ring-1 focus:ring-[#9FE870] cursor-pointer shadow-xs"
                         >
-                            <option value="">Autofill from Saved Jobs...</option>
+                            <option value="">Autofill saved job</option>
                             {savedJobsList.map((job) => (
                                 <option key={job._id || job.id} value={job._id || job.id}>
                                     {job.company} — {job.title}
@@ -234,11 +230,8 @@ export const Outreach = () => {
                 <form onSubmit={handleGenerate} className="lg:col-span-5 space-y-4">
                     <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono">
-                                Target Details
-                            </span>
-                            <span className="text-[11px] text-zinc-400">
-                                {currentTabObj.label} Mode
+                            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                                Target
                             </span>
                         </div>
 
@@ -246,7 +239,7 @@ export const Outreach = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                                 <label className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                                    Target Role *
+                                    Role *
                                 </label>
                                 <div className="relative">
                                     <Briefcase className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -280,7 +273,7 @@ export const Outreach = () => {
                         {/* Tone Selector */}
                         <div className="space-y-1.5 pt-1">
                             <label className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                                Desired Tone
+                                Tone
                             </label>
                             <div className="grid grid-cols-3 gap-2">
                                 {TONES.map((t) => (
@@ -320,9 +313,8 @@ export const Outreach = () => {
                         <div className="space-y-1 pt-1">
                             <div className="flex items-center justify-between">
                                 <label className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                                    Target JD Requirements (Optional)
+                                    Job description (optional)
                                 </label>
-                                <span className="text-[10px] text-zinc-400">Helps tailor key achievements</span>
                             </div>
                             <textarea
                                 rows={3}
@@ -342,7 +334,7 @@ export const Outreach = () => {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Crafting {currentTabObj.label}...</span>
+                                    <span>Writing {currentTabObj.label}...</span>
                                 </>
                             ) : (
                                 <>
@@ -362,8 +354,8 @@ export const Outreach = () => {
                             <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
                                 <div className="flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-[#9FE870]" />
-                                    <span className="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 uppercase">
-                                        Generated Output
+                                    <span className="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300">
+                                        Output
                                     </span>
                                 </div>
 
@@ -375,7 +367,7 @@ export const Outreach = () => {
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#9FE870] hover:bg-[#8dd461] text-[#163300] text-xs font-bold transition-all shadow-xs cursor-pointer"
                                         >
                                             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                            <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
+                                            <span>{copied ? 'Copied' : 'Copy'}</span>
                                         </button>
                                     </div>
                                 )}
@@ -400,14 +392,9 @@ export const Outreach = () => {
                             {loading ? (
                                 <div className="min-h-[300px] flex flex-col items-center justify-center text-center space-y-3">
                                     <Loader2 className="w-8 h-8 text-[#163300] dark:text-[#9FE870] animate-spin" />
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                            Synthesizing tailored outreach...
-                                        </p>
-                                        <p className="text-xs text-zinc-400">
-                                            Matching your credentials to {company || 'target company'}'s culture.
-                                        </p>
-                                    </div>
+                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                        Writing outreach...
+                                    </p>
                                 </div>
                             ) : generatedContent ? (
                                 <textarea
@@ -422,7 +409,7 @@ export const Outreach = () => {
                                         <Send className="w-6 h-6 text-[#163300] dark:text-[#9FE870]" />
                                     </div>
                                     <p className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                                        Enter role and company to generate {currentTabObj.label.toLowerCase()}
+                                        Add a role or company
                                     </p>
                                 </div>
                             )}
@@ -433,9 +420,6 @@ export const Outreach = () => {
                             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400">
                                 <span>
                                     {generatedContent.trim().split(/\s+/).filter(Boolean).length} words · {generatedContent.length} characters
-                                </span>
-                                <span className="text-[#163300] dark:text-[#9FE870] font-semibold">
-                                    Direct & Editable
                                 </span>
                             </div>
                         )}
