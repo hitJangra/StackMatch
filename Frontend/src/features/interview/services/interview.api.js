@@ -281,3 +281,35 @@ export async function deleteSavedJob(id) {
     const response = await api.delete(`/api/saved-jobs/${id}`);
     return response.data;
 }
+
+// generate outreach copy (referral DM, cold email, cover letter, application Q&A)
+export async function generateOutreach(payload) {
+    const response = await api.post("/api/outreach/generate", payload);
+    return response.data;
+}
+
+// audit full resume pdf or text in Resume Lab
+export async function auditResume({ resumeFile, resumeText }) {
+    if (resumeFile) {
+        const formData = new FormData();
+        formData.append("resume", resumeFile);
+        const response = await api.post("/api/resume-lab/audit", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+        return response.data;
+    }
+    const response = await api.post("/api/resume-lab/audit", { resumeText });
+    return response.data;
+}
+
+// enhance a weak bullet point into 3 quantified impact bullets
+export async function enhanceResumeBullet({ bullet, targetRole }) {
+    const response = await api.post("/api/resume-lab/enhance-bullet", { bullet, targetRole });
+    return response.data;
+}
+
+// evaluate user's practice answer against interview question
+export async function evaluateAnswer({ question, userAnswer, role }) {
+    const response = await api.post("/api/interview/evaluate-answer", { question, userAnswer, role });
+    return response.data;
+}

@@ -1,5 +1,5 @@
 // react and state
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 // navigation hook
 import { useNavigate } from 'react-router';
 
@@ -25,6 +25,7 @@ import { getLinkedInJobUrl } from '../../../utils/linkedin';
 import { useToast } from '../../../components/Toast';
 import { WaveLoader } from '../../../components/Loaders';
 import { saveJobToSavedJobs } from './SavedJobs';
+import { LocationFilterBar, matchJobLocation } from '../components/LocationFilterBar';
 
 // shared select field component
 const FilterSelect = ({ label, value, onChange, options, icon: Icon }) => (
@@ -54,6 +55,8 @@ const Jobs = () => {
     const [keywordInput, setKeywordInput] = useState('');
     // filter states — pre-fetch query parameters
     const [location, setLocation] = useState('India');
+    const [activeLocation, setActiveLocation] = useState('All India');
+    const [customCity, setCustomCity] = useState('');
     const [experience, setExperience] = useState('any');
     const [jobType, setJobType] = useState('any');
     // scraped jobs list for current live search
@@ -67,6 +70,23 @@ const Jobs = () => {
     const { addToast } = useToast();
     // navigation router
     const navigate = useNavigate();
+
+    const handleLocationChange = (newLoc) => {
+        setActiveLocation(newLoc);
+        if (newLoc === 'All India') {
+            setLocation('India');
+        } else {
+            setLocation(newLoc);
+        }
+    };
+
+    const filteredJobs = useMemo(() => {
+        return jobs.filter((job) => matchJobLocation(job.location, activeLocation));
+    }, [jobs, activeLocation]);
+
+    const filteredPastJobs = useMemo(() => {
+        return pastJobs.filter((job) => matchJobLocation(job.location, activeLocation));
+    }, [pastJobs, activeLocation]);
 
     const handlePrep = async (job) => {
         // 1. If a real report already exists for this job, go straight to it.
@@ -291,6 +311,14 @@ const Jobs = () => {
                 </div>
             )}
 
+            {/* ── location filter bar ── */}
+            <LocationFilterBar
+                activeLocation={activeLocation}
+                onChange={handleLocationChange}
+                customCity={customCity}
+                onCustomCityChange={setCustomCity}
+            />
+
             {/* job listing cards — live search results */}
             {!loading && jobs.length > 0 && (
                 <div className="space-y-4">
@@ -302,81 +330,97 @@ const Jobs = () => {
                             </h2>
                         </div>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Showing <span className="font-semibold text-zinc-900 dark:text-zinc-100">{jobs.length}</span> results
-                            {location !== 'any' && <> in <span className="font-semibold text-zinc-900 dark:text-zinc-100">{location}</span></>}
+                            Showing <span className="font-semibold text-zinc-900 dark:text-zinc-100">{filteredJobs.length}</span> of {jobs.length} results
+                            {activeLocation !== 'All India' && <> in <span className="font-semibold text-zinc-900 dark:text-zinc-100">{activeLocation}</span></>}
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {jobs.map((job, idx) => (
-                            <div
-                                key={job.url || idx}
-                                className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
+
+                    {filteredJobs.length === 0 ? (
+                        <div className="text-center py-8 px-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                No live search results match "{activeLocation}".
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => handleLocationChange('All India')}
+                                className="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                             >
-                                <div className="space-y-3">
-                                    {/* job title — clickable link to linkedin with arrow icon */}
-                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
-                                        <a
-                                            href={getLinkedInJobUrl(job)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
-                                            title="View & apply for this job on LinkedIn"
-                                        >
-                                            <span className="line-clamp-1">{job.title}</span>
-                                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
-                                        </a>
-                                    </h3>
-                                    {/* company and location */}
-                                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                                        {[job.company, job.location].filter(Boolean).join(' · ')}
+                                Show all ({jobs.length})
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredJobs.map((job, idx) => (
+                                <div
+                                    key={job.url || idx}
+                                    className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
+                                >
+                                    <div className="space-y-3">
+                                        {/* job title — clickable link to linkedin with arrow icon */}
+                                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+                                            <a
+                                                href={getLinkedInJobUrl(job)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group/title"
+                                                title="View & apply for this job on LinkedIn"
+                                            >
+                                                <span className="line-clamp-1">{job.title}</span>
+                                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 group-hover/title:text-indigo-500 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 transition-all flex-shrink-0" />
+                                            </a>
+                                        </h3>
+                                        {/* company and location */}
+                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                            {[job.company, job.location].filter(Boolean).join(' · ')}
+                                        </div>
+                                        {/* description snippet */}
+                                        {job.description && (
+                                            <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
+                                                {decodeHtmlEntities(job.description)}
+                                            </p>
+                                        )}
                                     </div>
-                                    {/* description snippet */}
-                                    {job.description && (
-                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-                                            {decodeHtmlEntities(job.description)}
-                                        </p>
-                                    )}
-                                </div>
 
-                                {/* card footer actions */}
-                                <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex gap-2">
-                                    {getLinkedInJobUrl(job) && (
-                                        <a
-                                            href={getLinkedInJobUrl(job)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="wise-primary-pill flex-1"
-                                            title="Open application page"
+                                    {/* card footer actions */}
+                                    <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex gap-2">
+                                        {getLinkedInJobUrl(job) && (
+                                            <a
+                                                href={getLinkedInJobUrl(job)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="wise-primary-pill flex-1"
+                                                title="Open application page"
+                                            >
+                                                <span>Apply</span>
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </a>
+                                        )}
+
+                                        <button
+                                            onClick={() => {
+                                                saveJobToSavedJobs(job)
+                                                    .then((added) => addToast(added ? `Added "${job.title}" to Saved Jobs!` : `Could not save "${job.title}".`, added ? "success" : "error"))
+                                                    .catch(() => addToast("Could not save job.", "error"));
+                                            }}
+                                            className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                                            title="Save this application"
                                         >
-                                            <span>Apply</span>
-                                            <ExternalLink className="w-3.5 h-3.5" />
-                                        </a>
-                                    )}
+                                            <BookmarkPlus className="w-3.5 h-3.5" />
+                                        </button>
 
-                                    <button
-                                        onClick={() => {
-                                            saveJobToSavedJobs(job)
-                                                .then((added) => addToast(added ? `Added "${job.title}" to Saved Jobs!` : `Could not save "${job.title}".`, added ? "success" : "error"))
-                                                .catch(() => addToast("Could not save job.", "error"));
-                                        }}
-                                        className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                                        title="Save this application"
-                                    >
-                                        <BookmarkPlus className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    <button
-                                        onClick={() => handlePrep(job)}
-                                        className="wise-primary-pill"
-                                        title="Prepare for this job"
-                                    >
-                                        <Search className="w-3.5 h-3.5" />
-                                        <span>Prep</span>
-                                    </button>
+                                        <button
+                                            onClick={() => handlePrep(job)}
+                                            className="wise-primary-pill"
+                                            title="Prepare for this job"
+                                        >
+                                            <Search className="w-3.5 h-3.5" />
+                                            <span>Prep</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -403,7 +447,7 @@ const Jobs = () => {
                                     Past Recommendations
                                 </h2>
                                 <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
-                                    {pastJobs.length} {pastJobs.length === 1 ? 'role' : 'roles'}
+                                    {filteredPastJobs.length} of {pastJobs.length} {pastJobs.length === 1 ? 'role' : 'roles'}
                                 </span>
                             </div>
                         </div>
@@ -420,9 +464,9 @@ const Jobs = () => {
                             </div>
                         ))}
                     </div>
-                ) : pastJobs.length > 0 ? (
+                ) : filteredPastJobs.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {pastJobs.map((job, idx) => (
+                        {filteredPastJobs.map((job, idx) => (
                             <div
                                 key={job.url || `${job.title}-${idx}`}
                                 className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-xs flex flex-col justify-between group"
@@ -493,6 +537,19 @@ const Jobs = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                ) : pastJobs.length > 0 ? (
+                    <div className="text-center py-8 px-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                            No past recommendations match "{activeLocation}".
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => handleLocationChange('All India')}
+                            className="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                        >
+                            Show all ({pastJobs.length})
+                        </button>
                     </div>
                 ) : (
                     <div className="text-center py-10 px-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">

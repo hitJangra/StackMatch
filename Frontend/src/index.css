@@ -562,8 +562,25 @@ textarea:focus-visible {
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-pill);
   background: var(--color-accent);
-  color: var(--color-accent-ink) !important;
+  color: #163300 !important;
+  font-weight: 700;
   white-space: nowrap;
+}
+
+/* Enforce crisp dark text on all bright lime (#9FE870) surfaces in both light and dark modes */
+[class*="bg-[#9FE870]"],
+[style*="#9FE870"],
+.btn-primary,
+.badge-lime {
+  color: #163300 !important;
+}
+
+:root[data-mode="dark"] [class*="bg-[#9FE870]"],
+:root[data-mode="dark"] [style*="#9FE870"],
+:root[data-mode="dark"] .btn-primary,
+:root[data-mode="dark"] .match-pill,
+:root[data-mode="dark"] .badge-lime {
+  color: #163300 !important;
 }
 
 .bento-forest {

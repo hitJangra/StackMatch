@@ -114,9 +114,9 @@ async function recommendJobsController(req, res, next) {
 
         // read optional pre-fetch filter query params
         const filters = {
-            location:   (req.query.location   || "India").trim(),
-            experience: (req.query.exp         || "any").trim(),
-            type:       (req.query.type        || "any").trim()
+            location:   (req.query.location || req.body.location || "India").trim(),
+            experience: (req.query.exp      || req.body.exp      || "any").trim(),
+            type:       (req.query.type     || req.body.type     || "any").trim()
         }
 
         // take top 3 keywords to keep scraper execution fast and cheap

@@ -22,6 +22,8 @@ const Jobs = lazy(() => import("./features/interview/pages/Jobs"));
 const SavedJobs = lazy(() => import("./features/interview/pages/SavedJobs"));
 const Settings = lazy(() => import("./features/interview/pages/Settings"));
 const InterviewReport = lazy(() => import("./features/interview/pages/InterviewReport"));
+const ResumeLab = lazy(() => import("./features/resume-lab/pages/ResumeLab"));
+const Outreach = lazy(() => import("./features/outreach/pages/Outreach"));
 
 // helper wrapper to render lazy components with suspense fallback
 const withSuspense = (Component, message) => (
@@ -73,6 +75,16 @@ export const router = createBrowserRouter([
         path: "/saved-jobs",
         element: <Protected><AppLayout /></Protected>,
         children: [{ index: true, element: withSuspense(SavedJobs, "Loading saved jobs...") }]
+    },
+    {
+        path: "/resume-lab",
+        element: <Protected><AppLayout /></Protected>,
+        children: [{ index: true, element: withSuspense(ResumeLab, "Loading Resume Lab...") }]
+    },
+    {
+        path: "/outreach",
+        element: <Protected><AppLayout /></Protected>,
+        children: [{ index: true, element: withSuspense(Outreach, "Loading Outreach Hub...") }]
     },
     {
         path: "/settings",

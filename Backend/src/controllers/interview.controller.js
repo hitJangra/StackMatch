@@ -3,7 +3,7 @@ const crypto = require("crypto")
 // pdf parser to extract text from uploaded resumes
 const { PDFParse } = require("pdf-parse")
 // ai service helpers for gemini/openai/groq prompts
-const { generateInterviewReport, generateJobKeywords } = require("../services/ai.service")
+const { generateInterviewReport, generateJobKeywords, evaluateAnswerContent } = require("../services/ai.service")
 // unified mongo models for report storage and caching
 const interviewReportModel = require("../models/interviewReport.model")
 const CachedScores = require("../models/cachedScores.model")
@@ -199,9 +199,50 @@ async function getAllInterviewReportsController(req, res, next) {
     }
 }
 
+// evaluate user's practice answer against question & STAR framework
+async function evaluateAnswerController(req, res, next) {
+    try {
+        const { question, userAnswer, role } = req.body
+
+        if (!question || typeof question !== "string") {
+            return res.status(400).json({
+                message: "Interview question is required."
+            })
+        }
+
+        if (!userAnswer || typeof userAnswer !== "string" || userAnswer.trim().length < 5) {
+            return res.status(400).json({
+                message: "Please write at least a brief answer to evaluate."
+            })
+        }
+
+        const customApiKey = req.headers["x-ai-api-key"]
+        const aiProvider = req.headers["x-ai-provider"] || "default"
+        const aiModel = req.headers["x-ai-model"]
+
+        const evaluation = await evaluateAnswerContent({
+            question: question.trim(),
+            userAnswer: userAnswer.trim(),
+            role: (role || "").trim(),
+            customApiKey,
+            aiProvider,
+            aiModel
+        })
+
+        return res.status(200).json({
+            success: true,
+            data: evaluation,
+            evaluation
+        })
+    } catch (err) {
+        next(err)
+    }
+}
+
 // export controller methods
 module.exports = { 
     generateInterViewReportController, 
     getInterviewReportByIdController, 
-    getAllInterviewReportsController
+    getAllInterviewReportsController,
+    evaluateAnswerController
 }

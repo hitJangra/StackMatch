@@ -19,7 +19,10 @@ import {
     ExternalLink,
     ArrowUpRight,
     FileText,
-    Loader2
+    Loader2,
+    Sparkles,
+    Check,
+    X
 } from 'lucide-react';
 // interview custom hook
 import { useInterview } from '../hooks/useInterview.js';
@@ -31,6 +34,7 @@ import { useToast } from '../../../components/Toast';
 import ResumeKeywordHeatmap from '../components/ResumeKeywordHeatmap';
 // tailored resume export helpers
 import { downloadTailoredResumePdf, downloadTailoredTexResume } from '../components/ResumePdfDocument';
+import { evaluateAnswer } from '../services/interview.api';
 
 // tab navigation menu items
 const NAV_ITEMS = [
@@ -60,10 +64,37 @@ const NAV_ITEMS = [
     },
 ];
 
-// collapsible question card component
-const QuestionCard = ({ item, index }) => {
+// collapsible question card component with interactive practice & evaluation
+const QuestionCard = ({ item, index, role }) => {
     // open state (first question open by default)
     const [open, setOpen] = useState(index === 0);
+    const [showPractice, setShowPractice] = useState(false);
+    const [userAnswer, setUserAnswer] = useState('');
+    const [evaluating, setEvaluating] = useState(false);
+    const [evaluation, setEvaluation] = useState(null);
+    const { addToast } = useToast();
+
+    const handleEvaluate = async () => {
+        if (!userAnswer.trim()) {
+            addToast("Please enter your answer before checking.", "warning");
+            return;
+        }
+        setEvaluating(true);
+        try {
+            const result = await evaluateAnswer({
+                question: item.question,
+                userAnswer: userAnswer.trim(),
+                role: role || 'Candidate'
+            });
+            setEvaluation(result?.data || result?.evaluation || result);
+            addToast("Answer evaluated successfully!", "success");
+        } catch (err) {
+            console.error(err);
+            addToast(err?.response?.data?.message || "Failed to evaluate answer. Try again.", "error");
+        } finally {
+            setEvaluating(false);
+        }
+    };
 
     return (
         <div className="interactive-card rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
@@ -102,6 +133,123 @@ const QuestionCard = ({ item, index }) => {
                         <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed pl-0.5 whitespace-pre-line">
                             {item.answer}
                         </p>
+                    </div>
+
+                    {/* Practice Answer Toggle & Area */}
+                    <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
+                        <button
+                            type="button"
+                            onClick={() => setShowPractice(p => !p)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#163300] dark:text-[#9FE870] hover:underline cursor-pointer"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{showPractice ? 'Hide Practice Box' : 'Practice Your Answer'}</span>
+                        </button>
+
+                        {showPractice && (
+                            <div className="mt-3 p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                                        <Sparkles className="w-3.5 h-3.5 text-[#163300] dark:text-[#9FE870]" />
+                                        <span>Practice Answer &amp; STAR Evaluation</span>
+                                    </label>
+                                    <span className="text-[11px] text-zinc-400 font-mono">
+                                        {userAnswer.trim() ? userAnswer.trim().split(/\s+/).length : 0} words
+                                    </span>
+                                </div>
+
+                                <textarea
+                                    value={userAnswer}
+                                    onChange={(e) => setUserAnswer(e.target.value)}
+                                    placeholder="Draft your answer here (incorporating Situation, Task, Action, and Result)..."
+                                    rows={4}
+                                    className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#163300] dark:focus:ring-[#9FE870] resize-y"
+                                />
+
+                                <div className="flex items-center justify-between pt-1">
+                                    <p className="text-[11px] text-zinc-400">
+                                        AI analyzes STAR structure, clarity &amp; impact.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleEvaluate}
+                                        disabled={evaluating || !userAnswer.trim()}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#9FE870] text-[#163300] dark:text-[#163300] hover:bg-[#8ddb5e] disabled:opacity-50 cursor-pointer shadow-xs transition-all"
+                                    >
+                                        {evaluating ? (
+                                            <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                <span>Checking...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="w-3.5 h-3.5" />
+                                                <span>Check Answer</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {evaluation && (
+                                    <div className="mt-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-3 animate-in fade-in duration-200">
+                                        {/* Header: Score & STAR tags */}
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                                    Score:
+                                                </span>
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#9FE870] text-[#163300] dark:text-[#163300] border border-[#9FE870]/40 shadow-xs">
+                                                    {evaluation.score} / 10
+                                                </span>
+                                            </div>
+
+                                            {/* STAR pills */}
+                                            <div className="flex items-center gap-1.5">
+                                                {['situation', 'task', 'action', 'result'].map((k) => {
+                                                    const passed = Boolean(evaluation.starCheck?.[k]);
+                                                    return (
+                                                        <span
+                                                            key={k}
+                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase ${
+                                                                passed
+                                                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700 line-through'
+                                                            }`}
+                                                            title={`${k.toUpperCase()}: ${passed ? 'Present' : 'Missing'}`}
+                                                        >
+                                                            {passed ? <Check className="w-2.5 h-2.5" /> : <X className="w-2.5 h-2.5" />}
+                                                            {k[0].toUpperCase()}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Feedback */}
+                                        <div className="space-y-1">
+                                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                                Feedback
+                                            </span>
+                                            <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                {evaluation.feedback}
+                                            </p>
+                                        </div>
+
+                                        {/* Improved Model Answer */}
+                                        {evaluation.improvedAnswer && (
+                                            <div className="space-y-1 pt-1">
+                                                <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                                    Improved Model Answer
+                                                </span>
+                                                <div className="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line font-mono text-[11px]">
+                                                    {evaluation.improvedAnswer}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -389,7 +537,7 @@ const InterviewReport = () => {
                             </div>
                             <div className="space-y-3">
                                 {report.technicalQuestions?.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
+                                    <QuestionCard key={i} item={q} index={i} role={report?.title} />
                                 ))}
                             </div>
                         </div>
@@ -408,7 +556,7 @@ const InterviewReport = () => {
                             </div>
                             <div className="space-y-3">
                                 {report.behavioralQuestions?.map((q, i) => (
-                                    <QuestionCard key={i} item={q} index={i} />
+                                    <QuestionCard key={i} item={q} index={i} role={report?.title} />
                                 ))}
                             </div>
                         </div>
@@ -429,11 +577,11 @@ const InterviewReport = () => {
                             <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-zinc-200 dark:before:bg-zinc-800">
                                 {report.preparationPlan?.map((day) => (
                                     <div key={day.day} className="relative space-y-2">
-                                        <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-indigo-600 bg-white dark:bg-zinc-900" />
+                                        <div className="absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-[#163300] dark:border-[#9FE870] bg-[#9FE870]" />
                                         
                                         <div className="interactive-card p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+                                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#9FE870] text-[#163300] dark:text-[#163300] border border-[#9FE870]/40 shadow-xs">
                                                     Day {day.day}
                                                 </span>
                                                 <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">

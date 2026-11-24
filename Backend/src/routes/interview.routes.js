@@ -21,5 +21,8 @@ interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewCo
 // get list of all interview reports for current user
 interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
 
+// evaluate user's practice answer against question & STAR framework
+interviewRouter.post("/evaluate-answer", authMiddleware.authUser, aiScraperLimiter, interviewController.evaluateAnswerController)
+
 // export interview router
 module.exports = interviewRouter

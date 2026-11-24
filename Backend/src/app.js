@@ -47,6 +47,8 @@ const interviewRouter = require("./routes/interview.routes")
 const jobsRouter = require("./routes/jobs.routes")
 const resumeRouter = require("./routes/resumeRoutes")
 const savedJobsRouter = require("./routes/savedJobs.routes")
+const outreachRouter = require("./routes/outreach.routes")
+const resumeLabRouter = require("./routes/resumeLab.routes")
 
 // mount api routes
 app.use("/api/auth", authRouter) // auth endpoints: login, register, logout, me
@@ -54,6 +56,8 @@ app.use("/api/interview", interviewRouter) // interview report and history route
 app.use("/api/jobs", jobsRouter) // job recommendation scraper routes
 app.use("/api", resumeRouter) // resume builder and pdf generator routes
 app.use("/api/saved-jobs", savedJobsRouter)
+app.use("/api/outreach", outreachRouter) // outreach hub generation routes
+app.use("/api/resume-lab", resumeLabRouter) // resume lab audit and bullet enhancer routes
 
 // catch-all error handling middleware
 app.use((err, req, res, next) => {

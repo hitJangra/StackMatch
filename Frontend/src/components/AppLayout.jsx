@@ -6,6 +6,8 @@ import {
     Briefcase,
     Bookmark,
     Settings,
+    FlaskConical,
+    Send,
     Sun,
     Moon,
     Menu,
@@ -24,6 +26,8 @@ const navItems = [
     { label: 'Home', path: '/home', icon: Home },
     { label: 'Jobs', path: '/jobs', icon: Briefcase },
     { label: 'Saved Jobs', path: '/saved-jobs', icon: Bookmark },
+    { label: 'Resume Lab', path: '/resume-lab', icon: FlaskConical },
+    { label: 'Outreach', path: '/outreach', icon: Send },
     { label: 'Settings', path: '/settings', icon: Settings }
 ];
 
@@ -81,9 +85,13 @@ const AppLayout = () => {
             ? 'Saved Jobs'
             : location.pathname.startsWith('/jobs')
                 ? 'Job Recommendations'
-                : location.pathname.startsWith('/settings')
-                    ? 'Settings'
-                    : 'Home';
+                : location.pathname.startsWith('/resume-lab')
+                    ? 'Resume Lab'
+                    : location.pathname.startsWith('/outreach')
+                        ? 'Outreach Hub'
+                        : location.pathname.startsWith('/settings')
+                            ? 'Settings'
+                            : 'Home';
 
     const sidebar = (
         <aside className="app-sidebar" aria-label="Workspace navigation">

@@ -327,8 +327,191 @@ ${resume}`
     return parsed.recommendedJobKeywords
 }
 
+// generic structured ai execution helper across providers
+async function executeStructuredAi({ prompt, schema, schemaDescription, customApiKey, aiProvider = 'default', aiModel }) {
+    if (aiProvider === 'openai') {
+        return await callOpenAiChatCompletion({ prompt, apiKey: customApiKey, model: aiModel, schemaDescription })
+    }
+    if (aiProvider === 'groq') {
+        return await callGroqChatCompletion({ prompt, apiKey: customApiKey, model: aiModel, schemaDescription })
+    }
+
+    const client = customApiKey 
+        ? new GoogleGenAI({ apiKey: customApiKey })
+        : defaultAi
+
+    const selectedModel = aiModel || "gemini-2.5-flash"
+
+    const response = await client.models.generateContent({
+        model: selectedModel,
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: zodToJsonSchema(schema),
+        }
+    })
+
+    return parseAiJson(response.text)
+}
+
+// zod schema for outreach messages
+const outreachSchema = z.object({
+    subject: z.string().optional().describe("Subject line for emails, or headline/tagline if applicable"),
+    content: z.string().describe("The generated message body, tailored specifically to the type and tone requested")
+})
+
+// generate personalized outreach copy
+async function generateOutreachContent({ type, company, role, jobDescription = "", resumeText = "", tone = "Direct", customQuestion = "", customApiKey, aiProvider, aiModel }) {
+    let typeInstructions = ""
+    if (type === "referral_dm") {
+        typeInstructions = "Create a short, non-cringe LinkedIn referral outreach message under 100 words. Connect genuinely, highlight 1 key matching qualification from the resume, state the target role, and ask politely if they would be open to referring or having a brief chat. Avoid generic groveling."
+    } else if (type === "cold_email") {
+        typeInstructions = "Generate a concise recruiter/hiring manager cold email. Include a high-converting, curiosity-inducing subject line in 'subject', and a 2-3 paragraph body in 'content' highlighting the single strongest matching project or quantifiable metric from the resume."
+    } else if (type === "cover_letter") {
+        typeInstructions = "Generate a punchy, modern 3-paragraph tailored cover letter: 1. The Hook & Enthusiasm for the company; 2. Hard Proof with specific achievements matching the JD; 3. Forward-looking value proposition and interview call-to-action. Do not use archaic boilerplate."
+    } else if (type === "app_qa") {
+        typeInstructions = `Write a first-person, high-impact answer to an application portal question. Target question: "${customQuestion || 'Why are you the right fit for this role and why this company?'}". Keep it authentic, structured, and under 250 words.`
+    } else {
+        typeInstructions = "Generate a professional career communication message tailored to the role and company."
+    }
+
+    const prompt = `You are an elite career strategist and executive coach.
+Target Company: ${company || "Target Company"}
+Target Role: ${role || "Target Role"}
+Tone: ${tone} (${tone === "Direct" ? "clear, confident, no fluff" : tone === "Formal" ? "polished, respectful, executive" : "short, high-signal, punchy"})
+Job Description Context: ${jobDescription || "N/A"}
+Candidate Resume Profile: ${resumeText || "N/A"}
+
+Goal:
+${typeInstructions}
+
+Rules:
+- Strictly output a valid JSON object matching: { "subject": string (optional), "content": string }.
+- Do not invent fake degrees or certifications not present in the candidate resume.`
+
+    return await executeStructuredAi({
+        prompt,
+        schema: outreachSchema,
+        schemaDescription: `{ "subject": "string", "content": "string" }`,
+        customApiKey,
+        aiProvider,
+        aiModel
+    })
+}
+
+// zod schema for resume lab audit
+const resumeAuditSchema = z.object({
+    overallScore: z.number().min(0).max(100).describe("Overall ATS and resume quality score between 0 and 100"),
+    strengths: z.array(z.string()).describe("Key strengths found in candidate experience, skills, and structure"),
+    weakVerbs: z.array(z.string()).describe("Passive or generic action verbs found (e.g. 'helped', 'worked on', 'responsible for') with recommended strong replacements"),
+    missingMetrics: z.array(z.string()).describe("Specific bullets or sections lacking quantifiable metrics (%, $, scale, users)"),
+    formattingTips: z.array(z.string()).describe("ATS formatting tips (e.g. single-column, standard headings, clear dates)"),
+    quickWins: z.array(z.string()).describe("3-5 high-impact immediate edits to drastically increase interview callbacks")
+})
+
+// audit a standalone resume
+async function auditResumeContent({ resumeText, customApiKey, aiProvider, aiModel }) {
+    const prompt = `You are a principal technical recruiter and ATS parser architect.
+Audit this resume thoroughly for ATS compliance, active language strength, metric density, and recruiter impact.
+
+Resume Text:
+${resumeText}
+
+Rules:
+- overallScore should reflect real-world hiring bar: 85+ is stellar with metrics; 70-84 is solid with small gaps; <70 is weak or lacking quantifiable impact.
+- strengths: 3-5 specific positive aspects.
+- weakVerbs: identify 3-6 passive or weak verbs actually found in the text and show what to replace them with (e.g. "Replace 'helped manage' with 'orchestrated' or 'spearheaded'").
+- missingMetrics: pinpoint exact bullets where numbers/scale are missing.
+- formattingTips: 2-4 concrete ATS layout & readability suggestions.
+- quickWins: 3-5 immediate high-yield changes candidate can execute in 10 minutes.
+- Strictly output valid JSON matching the schema.`
+
+    return await executeStructuredAi({
+        prompt,
+        schema: resumeAuditSchema,
+        schemaDescription: `{ "overallScore": number, "strengths": [string], "weakVerbs": [string], "missingMetrics": [string], "formattingTips": [string], "quickWins": [string] }`,
+        customApiKey,
+        aiProvider,
+        aiModel
+    })
+}
+
+// zod schema for bullet enhancement
+const bulletEnhanceSchema = z.object({
+    rewrites: z.array(z.string()).length(3).describe("Exactly 3 quantified, high-impact resume bullet rewrites using Google XYZ format")
+})
+
+// enhance a single bullet point
+async function enhanceBulletContent({ bullet, targetRole = "", customApiKey, aiProvider, aiModel }) {
+    const prompt = `You are an executive resume writer specializing in the Google XYZ formula: "Accomplished [X] as measured by [Y], by doing [Z]".
+Transform this raw bullet point into 3 distinct, high-impact, recruiter-ready resume bullets.
+Target Role context: ${targetRole || "Senior Professional / Engineer"}
+
+Raw Bullet:
+"${bullet}"
+
+Requirements for the 3 rewrites:
+1. Rewrite 1 (Metrics & Scale focus): Highlights performance, speed, latency, revenue, or user scale.
+2. Rewrite 2 (Architecture & Strategy focus): Highlights technical decisions, methodologies, leadership, or ownership.
+3. Rewrite 3 (Problem-Solving & Efficiency focus): Highlights root-cause resolution, cost reduction, or workflow automation.
+
+Use strong power verbs (e.g. Architected, Engineered, Optimized, Spearheaded, Accelerated). Do not include placeholders like '[X]'—provide realistic, convincing numbers and phrasing that candidate can customize.
+Strictly output a JSON object: { "rewrites": ["string", "string", "string"] }`
+
+    return await executeStructuredAi({
+        prompt,
+        schema: bulletEnhanceSchema,
+        schemaDescription: `{ "rewrites": ["string", "string", "string"] }`,
+        customApiKey,
+        aiProvider,
+        aiModel
+    })
+}
+
+// zod schema for practice answer evaluation
+const evaluateAnswerSchema = z.object({
+    score: z.number().min(1).max(10).describe("Score from 1 to 10 evaluating readiness, specificity, and delivery"),
+    starCheck: z.object({
+        situation: z.boolean().describe("Whether situation/context was established"),
+        task: z.boolean().describe("Whether the challenge or task was clear"),
+        action: z.boolean().describe("Whether the candidate's specific actions and technical/strategic decisions were highlighted"),
+        result: z.boolean().describe("Whether outcomes, metrics, or lessons learned were mentioned")
+    }).describe("STAR framework evaluation"),
+    feedback: z.string().describe("Constructive, actionable feedback pointing out what worked and what was missing"),
+    improvedAnswer: z.string().describe("A polished, recruiter-ready model answer to study and adapt")
+})
+
+// evaluate candidate's drafted interview answer
+async function evaluateAnswerContent({ question, userAnswer, role = "", customApiKey, aiProvider, aiModel }) {
+    const prompt = `You are a tough but supportive hiring manager evaluating a candidate's practice response to an interview question.
+Role: ${role || "Candidate Target Role"}
+Question Asked: "${question}"
+Candidate's Drafted Answer: "${userAnswer}"
+
+Evaluate:
+1. score (1-10): Be realistic. 9-10 is exceptional with STAR and metrics. 6-8 is decent but missing depth. 1-5 is vague or incomplete.
+2. starCheck: Set situation, task, action, result booleans based on whether the candidate actually covered each component.
+3. feedback: Concise, 2-3 sentence constructive critique on structure, technical depth, and confidence.
+4. improvedAnswer: A crisp, realistic model answer using the STAR method that the candidate can adapt.
+
+Strictly output valid JSON matching the schema.`
+
+    return await executeStructuredAi({
+        prompt,
+        schema: evaluateAnswerSchema,
+        schemaDescription: `{ "score": number, "starCheck": { "situation": boolean, "task": boolean, "action": boolean, "result": boolean }, "feedback": string, "improvedAnswer": string }`,
+        customApiKey,
+        aiProvider,
+        aiModel
+    })
+}
+
 // export ai functions
 module.exports = { 
     generateInterviewReport, 
-    generateJobKeywords 
+    generateJobKeywords,
+    generateOutreachContent,
+    auditResumeContent,
+    enhanceBulletContent,
+    evaluateAnswerContent
 }

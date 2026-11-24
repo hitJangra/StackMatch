@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ExternalLink, Plus, Search, Trash2, X } from 'lucide-react';
+import { ExternalLink, Plus, Search, Trash2, X, Send } from 'lucide-react';
 import { useToast } from '../../../components/Toast';
 import {
     getSavedJobs,
@@ -192,6 +192,22 @@ const SavedJobs = () => {
                                 {item.notes && <p className="saved-job-note">{item.notes}</p>}
                                 <div className="saved-job-actions">
                                     <button type="button" className="wise-secondary-pill" onClick={() => handlePrep(item)}>Prep</button>
+                                    <button 
+                                        type="button" 
+                                        className="wise-secondary-pill inline-flex items-center gap-1"
+                                        title="Draft referral or cold outreach message"
+                                        onClick={() => navigate('/outreach', {
+                                            state: {
+                                                role: item.title,
+                                                company: item.company,
+                                                jobDescription: item.description || item.notes || '',
+                                                type: 'referral_dm'
+                                            }
+                                        })}
+                                    >
+                                        <Send size={13} />
+                                        <span>Draft DM</span>
+                                    </button>
                                     {directUrl && (
                                         <a href={directUrl} target="_blank" rel="noopener noreferrer" className="wise-primary-pill">
                                             <span>Apply</span><ExternalLink size={15} />
