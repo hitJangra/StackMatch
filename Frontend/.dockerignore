@@ -5,6 +5,7 @@ npm-debug.log
 .env.*
 .git
 .gitignore
+dist
 Dockerfile
 .dockerignore
 README.md

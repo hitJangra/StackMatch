@@ -2,3 +2,7 @@
 # Editor & Playwright artifacts
 .vscode/
 .playwright-mcp/
+
+node_modules/
+
+.env
