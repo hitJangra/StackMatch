@@ -72,8 +72,8 @@ async function callWithRetryAndFallback({
     // Model fallback chain: primary model -> gemini-2.0-flash -> gemini-2.0-flash-lite
     const modelChain = Array.from(new Set([
         primaryModel || "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite"
+        "gemini-2.5-flash-lite",
+        "gemini-3.5-flash-lite"
     ]));
 
     let lastError = null;
